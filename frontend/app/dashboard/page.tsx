@@ -39,9 +39,12 @@ interface DashboardStats {
   availableCredits: number
   dailyCreditsEarned: number
   dailyCreditLimit: number
+  dailyProgress: number
   streak: number
   totalTasks: number
   completedTasks: number
+  coinBalance: number
+  totalCoinsEarned: number
   referralStats: {
     totalReferrals: number
     totalEarnings: number
@@ -91,30 +94,58 @@ export default function DashboardPage() {
       setLoadingStats(true)
       setLoadingTasks(true)
 
-      // Fetch user stats
-      const statsResponse = await apiRequest('api/credits/balance', {
+      // Fetch comprehensive dashboard stats
+      const statsResponse = await apiRequest('api/stats/dashboard', {
         headers: getAuthHeaders()
       })
       if (statsResponse.ok) {
         const statsData = await statsResponse.json()
-        // Transform the API response to match the expected interface
+        // Use the comprehensive stats directly
         const transformedStats = {
           availableCredits: statsData.availableCredits || 0,
           totalCredits: statsData.totalCredits || 0,
-          dailyCreditsEarned: statsData.user?.dailyCreditsEarned || 0,
-          dailyCreditLimit: statsData.user?.dailyCreditLimit || 0,
-          streak: 0, // Not available from this endpoint
-          totalTasks: 0, // Not available from this endpoint
-          completedTasks: 0, // Not available from this endpoint
+          dailyCreditsEarned: statsData.dailyCreditsEarned || 0,
+          dailyCreditLimit: statsData.dailyCreditLimit || 0,
+          dailyProgress: statsData.dailyProgress || 0,
+          streak: statsData.streak || 0,
+          totalTasks: statsData.totalTasks || 0,
+          completedTasks: statsData.completedTasks || 0,
+          coinBalance: statsData.coinBalance || 0,
+          totalCoinsEarned: statsData.totalCoinsEarned || 0,
           referralStats: {
-            totalReferrals: 0, // Not available from this endpoint
-            totalEarnings: 0, // Not available from this endpoint
-            activeReferrals: 0 // Not available from this endpoint
+            totalReferrals: statsData.referralStats?.totalReferrals || 0,
+            totalEarnings: statsData.referralStats?.totalEarnings || 0,
+            activeReferrals: statsData.referralStats?.activeReferrals || 0
           }
         }
         setStats(transformedStats)
       } else {
         console.error('Failed to fetch stats:', statsResponse.status)
+        // Fallback to old endpoint if new one fails
+        const fallbackResponse = await apiRequest('api/credits/balance', {
+          headers: getAuthHeaders()
+        })
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json()
+          const fallbackStats = {
+            availableCredits: fallbackData.availableCredits || 0,
+            totalCredits: fallbackData.totalCredits || 0,
+            dailyCreditsEarned: fallbackData.user?.dailyCreditsEarned || 0,
+            dailyCreditLimit: fallbackData.user?.dailyCreditLimit || 0,
+            dailyProgress: 0,
+            streak: 0,
+            totalTasks: 0,
+            completedTasks: 0,
+            coinBalance: 0,
+            totalCoinsEarned: 0,
+            referralStats: {
+              totalReferrals: 0,
+              totalEarnings: 0,
+              activeReferrals: 0
+            }
+          }
+          setStats(fallbackStats)
+        }
       }
       setLoadingStats(false)
 

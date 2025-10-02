@@ -3,6 +3,10 @@ const User = require('../models/User');
 const Credit = require('../models/Credit');
 const VipPurchase = require('../models/VipPurchase');
 const Wallet = require('../models/Wallet');
+const Coin = require('../models/Coin');
+const AppInstall = require('../models/AppInstall');
+const { MultiLevelReferral } = require('../models/MultiLevelReferral');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -141,6 +145,172 @@ router.get('/recent-activity', async (req, res) => {
   } catch (error) {
     console.error('Get recent activity error:', error);
     res.status(500).json({ message: 'Failed to get recent activity' });
+  }
+});
+
+// @route   GET /api/stats/dashboard
+// @desc    Get user's comprehensive dashboard statistics
+// @access  Private
+router.get('/dashboard', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get credit statistics
+    const availableCredits = await Credit.getUserAvailableCredits(userId);
+    const totalCredits = await Credit.getUserTotalCredits(userId);
+    
+    // Get today's credits earned
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todayCredits = await Credit.aggregate([
+      {
+        $match: {
+          userId: new require('mongoose').Types.ObjectId(userId),
+          createdAt: { $gte: today, $lt: tomorrow },
+          amount: { $gt: 0 }
+        }
+      },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+    const dailyCreditsEarned = todayCredits.length > 0 ? todayCredits[0].total : 0;
+
+    // Get coin statistics
+    const coinStats = await Coin.aggregate([
+      { $match: { userId: new require('mongoose').Types.ObjectId(userId), status: 'completed' } },
+      {
+        $group: {
+          _id: '$type',
+          total: { $sum: '$amount' },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const totalCoinsEarned = coinStats
+      .filter(stat => stat._id === 'earned')
+      .reduce((sum, stat) => sum + stat.total, 0);
+
+    // Get task completion statistics
+    const completedTasks = await Credit.countDocuments({
+      userId,
+      type: { $in: ['task_completion', 'ad_watch', 'survey_completion'] },
+      status: 'vested'
+    });
+
+    const totalTasks = await Credit.countDocuments({
+      userId,
+      type: { $in: ['task_completion', 'ad_watch', 'survey_completion'] }
+    });
+
+    // Get app install statistics
+    const appInstallStats = await AppInstall.getInstallStats(userId);
+    const completedAppInstalls = appInstallStats.summary.completedInstalls || 0;
+
+    // Calculate streak (consecutive days with activity)
+    let streak = 0;
+    const checkDate = new Date();
+    checkDate.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < 365; i++) { // Check up to 365 days
+      const dayStart = new Date(checkDate);
+      const dayEnd = new Date(checkDate);
+      dayEnd.setDate(dayEnd.getDate() + 1);
+
+      const hasActivity = await Credit.countDocuments({
+        userId,
+        createdAt: { $gte: dayStart, $lt: dayEnd },
+        amount: { $gt: 0 }
+      });
+
+      if (hasActivity > 0) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+
+    // Get referral statistics
+    const referralStats = await MultiLevelReferral.getReferralStats(userId);
+
+    // Get recent activity
+    const recentActivity = await Credit.find({
+      userId,
+      amount: { $gt: 0 }
+    })
+    .sort({ createdAt: -1 })
+    .limit(10)
+    .select('amount type source description createdAt');
+
+    // Calculate daily progress
+    const dailyCreditLimit = user.getDailyCreditLimit();
+    const dailyProgress = Math.min((dailyCreditsEarned / dailyCreditLimit) * 100, 100);
+
+    res.json({
+      // Credit stats
+      availableCredits: Math.round(availableCredits),
+      totalCredits: Math.round(totalCredits),
+      dailyCreditsEarned: Math.round(dailyCreditsEarned),
+      dailyCreditLimit: Math.round(dailyCreditLimit),
+      dailyProgress: Math.round(dailyProgress),
+
+      // Coin stats
+      coinBalance: user.coinBalance || 0,
+      totalCoinsEarned: Math.round(totalCoinsEarned),
+
+      // Task stats
+      completedTasks: completedTasks + completedAppInstalls,
+      totalTasks: totalTasks + appInstallStats.summary.totalInstalls,
+      
+      // App install stats
+      appInstallStats: appInstallStats.summary,
+
+      // User engagement
+      streak,
+      
+      // Referral stats
+      referralStats: {
+        totalReferrals: referralStats.totalReferrals || 0,
+        totalEarnings: Math.round(referralStats.totalCommissionsEarned || 0),
+        activeReferrals: referralStats.activeReferrals || 0,
+        level1Referrals: referralStats.level1Referrals || 0,
+        level2Referrals: referralStats.level2Referrals || 0,
+        level3Referrals: referralStats.level3Referrals || 0
+      },
+
+      // Recent activity
+      recentActivity,
+
+      // User info
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        vipLevel: user.vipLevel,
+        isVipActive: user.isVipActive,
+        vipExpiry: user.vipExpiry,
+        referralCode: user.referralCode,
+        totalCredits: user.totalCredits,
+        availableCredits: user.availableCredits,
+        coinBalance: user.coinBalance
+      }
+    });
+
+  } catch (error) {
+    console.error('Get dashboard stats error:', error);
+    res.status(500).json({ 
+      message: 'Failed to get dashboard statistics',
+      error: error.message 
+    });
   }
 });
 
