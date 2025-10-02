@@ -25,8 +25,8 @@ const seedData = async () => {
 
     // Create admin user
     const adminUser = new User({
-      email: 'admin@taskvip.com',
-      password: 'admin123',
+      email: 'task.vip.shop@gmail.com',
+      password: 'Ad282499',
       firstName: 'Admin',
       lastName: 'User',
       vipLevel: 3,

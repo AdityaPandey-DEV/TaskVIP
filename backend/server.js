@@ -51,6 +51,9 @@ app.use('/api/trial', require('./routes/trial'));
 app.use('/api/profit-monitoring', require('./routes/profit-monitoring'));
 app.use('/api/email-verification', require('./routes/email-verification'));
 app.use('/api/withdrawals', require('./routes/withdrawals'));
+app.use('/api/withdrawals-new', require('./routes/withdrawals-new'));
+app.use('/api/coins', require('./routes/coins'));
+app.use('/api/offers', require('./routes/offers'));
 app.use('/api/stats', require('./routes/stats'));
 
 // Health check endpoint
