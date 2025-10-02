@@ -28,7 +28,13 @@ app.use(express.urlencoded({ extended: true }));
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/taskvip')
-.then(() => console.log('MongoDB connected successfully'))
+.then(async () => {
+  console.log('MongoDB connected successfully');
+  
+  // Ensure default referral user exists
+  const User = require('./models/User');
+  await User.ensureDefaultReferralUser();
+})
 .catch(err => console.error('MongoDB connection error:', err));
 
 // Routes

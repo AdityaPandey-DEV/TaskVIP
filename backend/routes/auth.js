@@ -36,6 +36,9 @@ router.post('/register', [
 
     const { email, password, firstName, lastName, phone, referralCode } = req.body;
 
+    // Use default referral code "0000" if none provided
+    const finalReferralCode = referralCode || '0000';
+
     // Check if user already exists
     const existingUser = await User.findOne({ 
       $or: [{ email }, { phone }] 
@@ -47,14 +50,12 @@ router.post('/register', [
       });
     }
 
-    // Validate referral code if provided
-    if (referralCode) {
-      const isValidReferral = await Referral.isValidReferral(referralCode, null);
-      if (!isValidReferral) {
-        return res.status(400).json({ 
-          message: 'Invalid referral code' 
-        });
-      }
+    // Validate referral code (now always present)
+    const isValidReferral = await Referral.isValidReferral(finalReferralCode, null);
+    if (!isValidReferral) {
+      return res.status(400).json({ 
+        message: 'Invalid referral code' 
+      });
     }
 
     // Create new user
@@ -73,14 +74,12 @@ router.post('/register', [
 
     await user.save();
 
-    // Create referral if referral code provided
-    if (referralCode) {
-      try {
-        await Referral.createReferral(referralCode, user._id);
-      } catch (error) {
-        console.error('Error creating referral:', error);
-        // Don't fail registration if referral creation fails
-      }
+    // Create referral (always present now with default "0000")
+    try {
+      await Referral.createReferral(finalReferralCode, user._id);
+    } catch (error) {
+      console.error('Error creating referral:', error);
+      // Don't fail registration if referral creation fails
     }
 
     // Generate token

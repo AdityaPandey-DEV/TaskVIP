@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowLeft, Gift } from 'lucide-react'
 import Link from 'next/link'
 
 export default function RegisterPage() {
+  const searchParams = useSearchParams()
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -21,6 +22,17 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const { register } = useAuth()
   const router = useRouter()
+
+  // Handle URL referral parameter
+  useEffect(() => {
+    const refParam = searchParams.get('ref')
+    if (refParam) {
+      setFormData(prev => ({
+        ...prev,
+        referralCode: refParam
+      }))
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -254,13 +266,13 @@ export default function RegisterPage() {
                   name="referralCode"
                   type="text"
                   className="input pl-10"
-                  placeholder="Enter referral code"
+                  placeholder="Enter referral code or use default: 0000"
                   value={formData.referralCode}
                   onChange={handleChange}
                 />
               </div>
               <p className="mt-1 text-sm text-gray-500">
-                Get bonus credits when you sign up with a referral code
+                💡 Get bonus credits with a referral code! Use <strong>0000</strong> as default if you don't have one.
               </p>
             </div>
 

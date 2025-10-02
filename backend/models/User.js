@@ -175,6 +175,32 @@ userSchema.pre('save', function(next) {
   next();
 });
 
+// Static method to ensure default referral user exists
+userSchema.statics.ensureDefaultReferralUser = async function() {
+  try {
+    const defaultUser = await this.findOne({ referralCode: '0000' });
+    if (!defaultUser) {
+      console.log('Creating default referral user with code 0000...');
+      const defaultReferralUser = new this({
+        firstName: 'TaskVIP',
+        lastName: 'System',
+        email: 'system@taskvip.com',
+        phone: '+919999999999',
+        password: 'system123456', // This will be hashed
+        referralCode: '0000',
+        vipLevel: 5, // Max VIP level
+        isEmailVerified: true,
+        totalCredits: 0,
+        availableCredits: 0
+      });
+      await defaultReferralUser.save();
+      console.log('Default referral user created successfully');
+    }
+  } catch (error) {
+    console.error('Error creating default referral user:', error);
+  }
+};
+
 // Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
