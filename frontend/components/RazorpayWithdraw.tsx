@@ -49,6 +49,12 @@ interface WithdrawalHistory {
   payoutDetails: any
 }
 
+interface UserBalance {
+  availableCredits: number
+  coinBalance: number
+  totalCredits: number
+}
+
 export default function RazorpayWithdraw() {
   const { user } = useAuth()
   const [methods, setMethods] = useState<WithdrawalMethod[]>([])
@@ -57,16 +63,20 @@ export default function RazorpayWithdraw() {
   const [payoutDetails, setPayoutDetails] = useState<any>({})
   const [loading, setLoading] = useState(false)
   const [methodsLoading, setMethodsLoading] = useState(true)
+  const [balanceLoading, setBalanceLoading] = useState(true)
+  const [userBalance, setUserBalance] = useState<UserBalance>({
+    availableCredits: 0,
+    coinBalance: 0,
+    totalCredits: 0
+  })
   const [history, setHistory] = useState<WithdrawalHistory[]>([])
   const [showHistory, setShowHistory] = useState(false)
   const [step, setStep] = useState(1) // 1: method selection, 2: details, 3: confirmation
 
   useEffect(() => {
-    console.log('🔧 RazorpayWithdraw component mounted, fetching methods...')
-    // Temporary: Force fallback methods to show immediately for testing
-    setFallbackMethods()
     fetchWithdrawalMethods()
     fetchWithdrawalHistory()
+    fetchUserBalance()
   }, [])
 
   const fetchWithdrawalMethods = async () => {
@@ -104,7 +114,6 @@ export default function RazorpayWithdraw() {
   }
 
   const setFallbackMethods = () => {
-    console.log('🚨 Setting fallback withdrawal methods...')
     const fallbackMethods = [
       {
         id: 'upi',
@@ -158,7 +167,6 @@ export default function RazorpayWithdraw() {
         ]
       }
     ]
-    console.log('✅ Fallback methods set:', fallbackMethods.length, 'methods')
     setMethods(fallbackMethods)
   }
 
@@ -192,6 +200,37 @@ export default function RazorpayWithdraw() {
     }
   }
 
+  const fetchUserBalance = async () => {
+    setBalanceLoading(true)
+    try {
+      const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1]
+      const response = await apiRequest('api/stats/dashboard', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (!response.ok) {
+        console.error('Failed to fetch user balance:', response.status)
+        return
+      }
+      
+      const data = await response.json()
+      console.log('User balance response:', data) // Debug log
+      
+      setUserBalance({
+        availableCredits: data.availableCredits || 0,
+        coinBalance: data.coinBalance || 0,
+        totalCredits: data.totalCredits || 0
+      })
+    } catch (error) {
+      console.error('Error fetching user balance:', error)
+    } finally {
+      setBalanceLoading(false)
+    }
+  }
+
   const handleMethodSelect = (method: WithdrawalMethod) => {
     setSelectedMethod(method)
     setPayoutDetails({})
@@ -217,8 +256,8 @@ export default function RazorpayWithdraw() {
     return amountNum - fee
   }
 
-  const getCoinAmount = () => {
-    return (parseFloat(amount) || 0) * 10 // 10 coins = ₹1
+  const getCreditsRequired = () => {
+    return parseFloat(amount) || 0 // 1 credit = ₹1
   }
 
   const validateUPI = (upiId: string) => {
@@ -241,9 +280,7 @@ export default function RazorpayWithdraw() {
     
     const amountNum = parseFloat(amount)
     if (amountNum < selectedMethod.minAmount) return false
-    
-    const coinAmount = getCoinAmount()
-    if (coinAmount > (user?.coinBalance || 0)) return false
+    if (amountNum > userBalance.availableCredits) return false
     
     // Validate required fields
     for (const field of selectedMethod.fields) {
@@ -314,6 +351,7 @@ export default function RazorpayWithdraw() {
         setAmount('')
         setPayoutDetails({})
         fetchWithdrawalHistory()
+        fetchUserBalance() // Refresh balance after withdrawal
       } else {
         toast.error(data.message || 'Failed to create withdrawal request')
       }
@@ -358,19 +396,48 @@ export default function RazorpayWithdraw() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-xl p-6 text-white">
-        <h2 className="text-2xl font-bold mb-2">Withdraw Your Earnings</h2>
-        <p className="text-green-100 mb-4">
-          Convert your coins to real money with multiple payout options
-        </p>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Withdraw Your Earnings</h2>
+            <p className="text-green-100">
+              Convert your credits to real money with multiple payout options
+            </p>
+          </div>
+          <button
+            onClick={fetchUserBalance}
+            disabled={balanceLoading}
+            className="px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors disabled:opacity-50 text-sm"
+          >
+            {balanceLoading ? 'Loading...' : 'Refresh Balance'}
+          </button>
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-2xl font-bold">{Math.floor((user?.coinBalance || 0) / 10)}</div>
-            <div className="text-sm text-green-100">Credits Ready</div>
+            {balanceLoading ? (
+              <div className="animate-pulse">
+                <div className="h-8 bg-white/20 rounded mb-1"></div>
+                <div className="h-4 bg-white/20 rounded w-20"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{userBalance.availableCredits}</div>
+                <div className="text-sm text-green-100">Credits Ready</div>
+              </>
+            )}
           </div>
           <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-2xl font-bold">₹{Math.floor((user?.coinBalance || 0) / 10)}</div>
-            <div className="text-sm text-green-100">Cash Value</div>
+            {balanceLoading ? (
+              <div className="animate-pulse">
+                <div className="h-8 bg-white/20 rounded mb-1"></div>
+                <div className="h-4 bg-white/20 rounded w-16"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">₹{userBalance.availableCredits}</div>
+                <div className="text-sm text-green-100">Cash Value</div>
+              </>
+            )}
           </div>
           <div className="bg-white/10 rounded-lg p-3">
             <div className="text-2xl font-bold">₹50</div>
@@ -481,13 +548,13 @@ export default function RazorpayWithdraw() {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     min={selectedMethod.minAmount}
-                    max={Math.floor((user?.coinBalance || 0) / 10)}
+                    max={userBalance.availableCredits}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder={`Min ₹${selectedMethod.minAmount}`}
                   />
                   {amount && (
                     <div className="mt-2 text-sm text-gray-600">
-                      <div>Coins required: {getCoinAmount()}</div>
+                      <div>Credits required: {getCreditsRequired()}</div>
                       <div>Processing fee: ₹{calculateFee()}</div>
                       <div className="font-semibold">You'll receive: ₹{getNetAmount()}</div>
                     </div>
