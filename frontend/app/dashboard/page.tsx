@@ -17,7 +17,16 @@ import {
   Copy,
   Share2,
   Target,
-  Award
+  Award,
+  Menu,
+  Bell,
+  Settings,
+  LogOut,
+  Coins,
+  Calendar,
+  Activity,
+  Smartphone,
+  DollarSign
 } from 'lucide-react'
 import Link from 'next/link'
 import { RewardSystem } from '@/components/RewardSystem'
@@ -55,6 +64,7 @@ export default function DashboardPage() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loadingStats, setLoadingStats] = useState(true)
   const [loadingTasks, setLoadingTasks] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Helper function to get auth headers
   const getAuthHeaders = () => {
@@ -117,10 +127,10 @@ export default function DashboardPage() {
   // Show loading screen while checking authentication
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-slate-100">
         <div className="text-center">
-          <div className="loading-spinner mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-slate-600 font-medium">Loading your dashboard...</p>
         </div>
       </div>
     )
@@ -128,11 +138,16 @@ export default function DashboardPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Please log in</h1>
-          <Link href="/login" className="btn btn-primary">
-            Login
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-slate-100">
+        <div className="text-center bg-white rounded-2xl shadow-xl p-8 max-w-md mx-4">
+          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Crown className="w-10 h-10 text-blue-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-800 mb-4">Welcome to TaskVIP</h1>
+          <p className="text-slate-600 mb-6">Please sign in to access your dashboard</p>
+          <Link href="/login" className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors">
+            Sign In
+            <ArrowRight className="w-4 h-4 ml-2" />
           </Link>
         </div>
       </div>
@@ -140,256 +155,386 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <Crown className="w-8 h-8 text-primary-600 mr-2" />
-              <h1 className="text-2xl font-bold text-gray-900">TaskVIP</h1>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-slate-50">
+      {/* Mobile Header */}
+      <div className="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+        <div className="flex items-center space-x-3">
+          <button 
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+          >
+            <Menu className="w-5 h-5 text-slate-600" />
+          </button>
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+              <Crown className="w-4 h-4 text-white" />
+            </div>
+            <span className="font-bold text-slate-800">TaskVIP</span>
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <button className="p-2 rounded-lg hover:bg-slate-100 transition-colors relative">
+            <Bell className="w-5 h-5 text-slate-600" />
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+          </button>
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+            <span className="text-white text-sm font-medium">{user.firstName?.[0]}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Sidebar Overlay for Mobile */}
+      {sidebarOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 flex">
+          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)}></div>
+          <div className="relative flex flex-col w-64 bg-white shadow-xl">
+            <div className="p-6 border-b border-slate-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl flex items-center justify-center">
+                  <Crown className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-slate-800">TaskVIP</h2>
+                  <p className="text-sm text-slate-500">Earn & Grow</p>
+                </div>
+              </div>
+            </div>
+            <nav className="flex-1 p-4 space-y-2">
+              <Link href="/dashboard" className="flex items-center space-x-3 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 font-medium">
+                <Activity className="w-4 h-4" />
+                <span>Dashboard</span>
+              </Link>
+              <Link href="/tasks" className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700">
+                <Target className="w-4 h-4" />
+                <span>Tasks</span>
+              </Link>
+              <Link href="/referrals" className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700">
+                <Users className="w-4 h-4" />
+                <span>Referrals</span>
+              </Link>
+              <Link href="/vip" className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700">
+                <Crown className="w-4 h-4" />
+                <span>VIP</span>
+              </Link>
+              <Link href="/withdraw" className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700">
+                <DollarSign className="w-4 h-4" />
+                <span>Withdraw</span>
+              </Link>
+            </nav>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Layout */}
+      <div className="flex">
+        {/* Desktop Sidebar */}
+        <div className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white border-r border-slate-200">
+          <div className="p-6 border-b border-slate-200">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl flex items-center justify-center">
+                <Crown className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="font-bold text-slate-800">TaskVIP</h2>
+                <p className="text-sm text-slate-500">Earn & Grow</p>
+              </div>
+            </div>
+          </div>
+          
+          <nav className="flex-1 p-4 space-y-2">
+            <Link href="/dashboard" className="flex items-center space-x-3 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 font-medium">
+              <Activity className="w-4 h-4" />
+              <span>Dashboard</span>
+            </Link>
+            <Link href="/tasks" className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700 transition-colors">
+              <Target className="w-4 h-4" />
+              <span>Tasks</span>
+            </Link>
+            <Link href="/referrals" className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700 transition-colors">
+              <Users className="w-4 h-4" />
+              <span>Referrals</span>
+            </Link>
+            <Link href="/vip" className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700 transition-colors">
+              <Crown className="w-4 h-4" />
+              <span>VIP</span>
+            </Link>
+            <Link href="/withdraw" className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700 transition-colors">
+              <DollarSign className="w-4 h-4" />
+              <span>Withdraw</span>
+            </Link>
+          </nav>
+
+          <div className="p-4 border-t border-slate-200">
+            <div className="flex items-center space-x-3 p-3 rounded-lg bg-slate-50">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-medium">{user.firstName?.[0]}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-slate-800 truncate">{user.firstName} {user.lastName}</p>
+                <p className="text-sm text-slate-500 truncate">{user.email}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="lg:pl-64 flex-1">
+          {/* Desktop Header */}
+          <div className="hidden lg:flex bg-white border-b border-slate-200 px-6 py-4 items-center justify-between sticky top-0 z-40">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-800">Welcome back, {user.firstName}! 👋</h1>
+              <p className="text-slate-600">Here's what's happening with your account today.</p>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <div className="text-sm text-gray-500">Welcome back,</div>
-                <div className="font-semibold text-gray-900">{user.firstName}</div>
-              </div>
-              <div className="flex items-center space-x-2">
-                {user.isVipActive && (
-                  <span className="vip-badge">VIP {user.vipLevel}</span>
-                )}
-                <button className="btn btn-secondary btn-sm">
-                  Profile
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Reward System - Earn Coins */}
-        <RewardSystem />
-        
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="stat-card">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Gift className="w-8 h-8 text-success-600" />
-              </div>
-              <div className="ml-4">
-                <div className="stat-value">{stats?.availableCredits || 0}</div>
-                <div className="stat-label">Available Credits</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <TrendingUp className="w-8 h-8 text-primary-600" />
-              </div>
-              <div className="ml-4">
-                <div className="stat-value">{stats?.totalCredits || 0}</div>
-                <div className="stat-label">Total Credits</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Target className="w-8 h-8 text-warning-600" />
-              </div>
-              <div className="ml-4">
-                <div className="stat-value">
-                  {stats?.dailyCreditsEarned || 0}/{stats?.dailyCreditLimit || 0}
-                </div>
-                <div className="stat-label">Daily Progress</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Award className="w-8 h-8 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <div className="stat-value">{stats?.streak || 0}</div>
-                <div className="stat-label">Day Streak</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Daily Tasks */}
-          <div className="lg:col-span-2">
-            <div className="card">
-              <div className="card-header">
-                <h2 className="text-xl font-semibold text-gray-900">Daily Tasks</h2>
-                <p className="text-gray-600">Complete tasks to earn credits</p>
-              </div>
-              
-              {loadingTasks ? (
-                <div className="flex justify-center py-8">
-                  <div className="loading-spinner"></div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {tasks.map((task) => (
-                    <div key={task.id} className="task-card">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900">{task.title}</h3>
-                          <p className="text-sm text-gray-600 mt-1">{task.description}</p>
-                          <div className="flex items-center mt-2 space-x-4">
-                            <span className="task-reward">+{task.reward} credits</span>
-                            <span className={`task-status task-status-${task.status}`}>
-                              {task.status}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {task.adNetwork}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          {task.status === 'pending' ? (
-                            <button className="btn btn-primary btn-sm">
-                              Start
-                            </button>
-                          ) : task.status === 'completed' ? (
-                            <button className="btn btn-success btn-sm">
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              Completed
-                            </button>
-                          ) : (
-                            <button className="btn btn-secondary btn-sm" disabled>
-                              {task.status}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+              {user.vipLevel > 0 && (
+                <div className="flex items-center space-x-2 px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full">
+                  <Crown className="w-4 h-4 text-white" />
+                  <span className="text-white font-medium text-sm">VIP {user.vipLevel}</span>
                 </div>
               )}
+              <button className="p-2 rounded-lg hover:bg-slate-100 transition-colors relative">
+                <Bell className="w-5 h-5 text-slate-600" />
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+              </button>
+              <button className="p-2 rounded-lg hover:bg-slate-100 transition-colors">
+                <Settings className="w-5 h-5 text-slate-600" />
+              </button>
             </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            
-            {/* VIP Status */}
-            <div className="card">
-              <div className="card-header">
-                <h3 className="text-lg font-semibold text-gray-900">VIP Status</h3>
+          {/* Dashboard Content */}
+          <div className="p-4 lg:p-6 space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Available Credits */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                    <Coins className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">Available</span>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-2xl font-bold text-slate-800">{stats?.availableCredits || 0}</p>
+                  <p className="text-sm text-slate-500">Credits Ready</p>
+                </div>
               </div>
-              {user.isVipActive ? (
-                <div className="text-center">
-                  <div className="vip-badge mb-4">VIP {user.vipLevel}</div>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Expires: {new Date(user.vipExpiry || '').toLocaleDateString()}
+
+              {/* Total Earned */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">Total</span>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-2xl font-bold text-slate-800">{stats?.totalCredits || 0}</p>
+                  <p className="text-sm text-slate-500">Total Earned</p>
+                </div>
+              </div>
+
+              {/* Daily Progress */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+                    <Target className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded-full">Today</span>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-2xl font-bold text-slate-800">
+                    {stats?.dailyCreditsEarned || 0}/{stats?.dailyCreditLimit || 0}
                   </p>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>Daily Limit:</span>
-                      <span className="font-semibold">{stats?.dailyCreditLimit || 0}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Referral Bonus:</span>
-                      <span className="font-semibold">5%</span>
-                    </div>
+                  <p className="text-sm text-slate-500">Daily Progress</p>
+                </div>
+                <div className="mt-3">
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-300"
+                      style={{ 
+                        width: `${Math.min(((stats?.dailyCreditsEarned || 0) / (stats?.dailyCreditLimit || 1)) * 100, 100)}%` 
+                      }}
+                    ></div>
                   </div>
                 </div>
-              ) : (
-                <div className="text-center">
-                  <Crown className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h4 className="font-semibold text-gray-900 mb-2">Upgrade to VIP</h4>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Unlock higher daily limits and better rewards
-                  </p>
-                  <Link href="/vip" className="btn btn-primary w-full">
-                    View Plans
-                  </Link>
+              </div>
+
+              {/* Streak */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
+                    <Zap className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded-full">Streak</span>
                 </div>
-              )}
+                <div className="space-y-1">
+                  <p className="text-2xl font-bold text-slate-800">{stats?.streak || 0}</p>
+                  <p className="text-sm text-slate-500">Days Active</p>
+                </div>
+              </div>
             </div>
 
-
-            {/* Referral Program */}
-            <div className="card">
-              <div className="card-header">
-                <h3 className="text-lg font-semibold text-gray-900">Referral Program</h3>
+            {/* Reward System */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="p-6 border-b border-slate-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-800">🎯 Earn Rewards</h2>
+                    <p className="text-slate-600">Complete tasks and earn coins that you can withdraw as real money</p>
+                  </div>
+                  <div className="hidden sm:flex items-center space-x-2 text-sm text-slate-500">
+                    <Clock className="w-4 h-4" />
+                    <span>Updated just now</span>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="label">Your Referral Code</label>
-                  <div className="flex">
-                    <input
-                      type="text"
-                      value={user.referralCode}
-                      readOnly
-                      className="referral-link flex-1"
-                    />
-                    <button
-                      onClick={copyReferralLink}
-                      className="btn btn-secondary ml-2"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold text-primary-600">
-                      {stats?.referralStats.totalReferrals || 0}
-                    </div>
-                    <div className="text-sm text-gray-600">Referrals</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-success-600">
-                      {stats?.referralStats.totalEarnings || 0}
-                    </div>
-                    <div className="text-sm text-gray-600">Earned</div>
-                  </div>
-                </div>
-
-                <Link href="/referrals" className="btn btn-secondary w-full">
-                  <Users className="w-4 h-4 mr-2" />
-                  View Referrals
-                </Link>
+              <div className="p-6">
+                <RewardSystem />
               </div>
             </div>
 
             {/* Quick Actions */}
-            <div className="card">
-              <div className="card-header">
-                <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Referral Program */}
+              <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-white">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                    <Users className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xs font-medium bg-white bg-opacity-20 px-2 py-1 rounded-full">Referrals</span>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Invite Friends & Earn</h3>
+                    <p className="text-blue-100 text-sm">Share your referral code and earn bonus credits for every friend who joins!</p>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-white bg-opacity-10 rounded-lg">
+                    <div>
+                      <p className="text-xs text-blue-100">Your Referral Code</p>
+                      <p className="font-mono font-bold">{user.referralCode}</p>
+                    </div>
+                    <button 
+                      onClick={copyReferralLink}
+                      className="p-2 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition-colors"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                      <p className="text-2xl font-bold">{stats?.referralStats.totalReferrals || 0}</p>
+                      <p className="text-xs text-blue-100">Total Referrals</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{stats?.referralStats.totalEarnings || 0}</p>
+                      <p className="text-xs text-blue-100">Bonus Earned</p>
+                    </div>
+                  </div>
+                  <Link 
+                    href="/referrals" 
+                    className="flex items-center justify-center space-x-2 w-full py-3 bg-white text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors"
+                  >
+                    <span>View Details</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
               </div>
-              <div className="space-y-3">
-                <Link href="/tasks" className="btn btn-primary w-full">
-                  <PlayCircle className="w-4 h-4 mr-2" />
-                  View All Tasks
-                </Link>
-                <Link href="/credits" className="btn btn-secondary w-full">
-                  <Gift className="w-4 h-4 mr-2" />
-                  Credit History
-                </Link>
-                <Link href="/redeem" className="btn btn-success w-full">
-                  <Zap className="w-4 h-4 mr-2" />
-                  Redeem Credits
-                </Link>
+
+              {/* VIP Status */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center">
+                    <Crown className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xs font-medium text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">VIP</span>
+                </div>
+                
+                {user.vipLevel > 0 ? (
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-800 mb-2">VIP Level {user.vipLevel}</h3>
+                      <p className="text-slate-600 text-sm">You're earning {user.vipLevel === 1 ? '20%' : user.vipLevel === 2 ? '50%' : '100%'} more on all tasks!</p>
+                    </div>
+                    <div className="p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-600">Expires</span>
+                        <span className="font-medium text-slate-800">
+                          {user.vipExpiry ? new Date(user.vipExpiry).toLocaleDateString() : 'Never'}
+                        </span>
+                      </div>
+                    </div>
+                    <Link 
+                      href="/vip" 
+                      className="flex items-center justify-center space-x-2 w-full py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg font-medium hover:from-yellow-600 hover:to-orange-600 transition-colors"
+                    >
+                      <span>Manage VIP</span>
+                      <Crown className="w-4 h-4" />
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-800 mb-2">Upgrade to VIP</h3>
+                      <p className="text-slate-600 text-sm">Unlock higher earning potential with VIP membership!</p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2 text-sm text-slate-600">
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <span>Up to 2x more coins</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-sm text-slate-600">
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <span>Higher daily limits</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-sm text-slate-600">
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <span>Priority support</span>
+                      </div>
+                    </div>
+                    <Link 
+                      href="/vip" 
+                      className="flex items-center justify-center space-x-2 w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-colors"
+                    >
+                      <span>Upgrade Now</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
-            
+
+            {/* Mobile App Promotion */}
+            <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-2xl p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                      <Smartphone className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Get the Mobile App</h3>
+                      <p className="text-slate-300 text-sm">Earn on the go with our mobile app</p>
+                    </div>
+                  </div>
+                  <p className="text-slate-300 text-sm mb-4">
+                    Download our mobile app for the best TaskVIP experience. Complete tasks anywhere, anytime!
+                  </p>
+                  <div className="flex space-x-3">
+                    <button className="px-4 py-2 bg-white text-slate-800 rounded-lg font-medium text-sm hover:bg-slate-100 transition-colors">
+                      Coming Soon
+                    </button>
+                  </div>
+                </div>
+                <div className="hidden sm:block ml-6">
+                  <div className="w-20 h-20 bg-white bg-opacity-10 rounded-2xl flex items-center justify-center">
+                    <Smartphone className="w-10 h-10 text-white" />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        
       </div>
     </div>
   )

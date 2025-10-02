@@ -10,7 +10,29 @@
   }
   
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-gradient-to-br from-blue-50 via-white to-slate-50 text-slate-900;
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-100;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400;
   }
 }
 
@@ -20,11 +42,51 @@
   }
   
   .btn-primary {
-    @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+    @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 shadow-sm;
   }
   
   .btn-secondary {
-    @apply bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500;
+    @apply bg-slate-200 text-slate-900 hover:bg-slate-300 focus:ring-slate-500 shadow-sm;
+  }
+  
+  /* Modern card styles */
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-all duration-200;
+  }
+  
+  .card-header {
+    @apply p-6 border-b border-slate-200;
+  }
+  
+  .card-body {
+    @apply p-6;
+  }
+  
+  /* Gradient backgrounds */
+  .gradient-blue {
+    @apply bg-gradient-to-r from-blue-600 to-blue-700;
+  }
+  
+  .gradient-purple {
+    @apply bg-gradient-to-r from-purple-600 to-purple-700;
+  }
+  
+  .gradient-green {
+    @apply bg-gradient-to-r from-green-500 to-emerald-600;
+  }
+  
+  .gradient-orange {
+    @apply bg-gradient-to-r from-orange-500 to-red-500;
+  }
+  
+  /* Loading animation */
+  .loading-pulse {
+    @apply animate-pulse bg-slate-200 rounded;
+  }
+  
+  /* Hover effects */
+  .hover-lift {
+    @apply transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg;
   }
   
   .btn-success {
