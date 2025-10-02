@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import Cookies from 'js-cookie'
 import { 
   PlayCircle, 
   Users, 
@@ -55,38 +56,53 @@ export default function DashboardPage() {
   const [loadingStats, setLoadingStats] = useState(true)
   const [loadingTasks, setLoadingTasks] = useState(true)
 
+  // Helper function to get auth headers
+  const getAuthHeaders = () => {
+    const token = Cookies.get('token')
+    return token ? { 'Authorization': `Bearer ${token}` } : {}
+  }
+
   useEffect(() => {
-    if (user) {
-      fetchDashboardData()
+    if (!loading) {
+      if (user) {
+        fetchDashboardData()
+      } else {
+        // Redirect to login if not authenticated
+        window.location.href = '/login'
+      }
     }
-  }, [user])
+  }, [user, loading])
 
   const fetchDashboardData = async () => {
     try {
+      setLoadingStats(true)
+      setLoadingTasks(true)
+
       // Fetch user stats
       const statsResponse = await fetch('/api/credits/balance', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        headers: getAuthHeaders()
       })
       if (statsResponse.ok) {
         const statsData = await statsResponse.json()
         setStats(statsData)
+      } else {
+        console.error('Failed to fetch stats:', statsResponse.status)
       }
+      setLoadingStats(false)
 
       // Fetch daily tasks
       const tasksResponse = await fetch('/api/tasks/daily', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        headers: getAuthHeaders()
       })
       if (tasksResponse.ok) {
         const tasksData = await tasksResponse.json()
-        setTasks(tasksData.tasks)
+        setTasks(tasksData.tasks || [])
+      } else {
+        console.error('Failed to fetch tasks:', tasksResponse.status)
       }
+      setLoadingTasks(false)
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
-    } finally {
       setLoadingStats(false)
       setLoadingTasks(false)
     }
@@ -98,10 +114,14 @@ export default function DashboardPage() {
     // You could add a toast notification here
   }
 
-  if (loading || loadingStats) {
+  // Show loading screen while checking authentication
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="loading-spinner"></div>
+        <div className="text-center">
+          <div className="loading-spinner mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
       </div>
     )
   }
