@@ -23,12 +23,6 @@ export const metadata: Metadata = {
     locale: 'en_US',
     images: ['/favicon.png'],
   },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'TaskVIP - Earn Credits by Completing Tasks',
-    description: 'Join TaskVIP and earn credits by completing daily tasks, watching ads, and referring friends.',
-    images: ['/favicon.png'],
-  },
   robots: {
     index: true,
     follow: true,
