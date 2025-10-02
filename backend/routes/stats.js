@@ -154,15 +154,22 @@ router.get('/recent-activity', async (req, res) => {
 router.get('/dashboard', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
+    console.log('📊 Dashboard stats requested for user:', userId);
+    
     const user = await User.findById(userId);
 
     if (!user) {
+      console.log('❌ User not found:', userId);
       return res.status(404).json({ message: 'User not found' });
     }
 
+    console.log('✅ User found:', user.email, 'VIP Level:', user.vipLevel);
+
     // Get credit statistics
+    console.log('💰 Fetching credit statistics...');
     const availableCredits = await Credit.getUserAvailableCredits(userId);
     const totalCredits = await Credit.getUserTotalCredits(userId);
+    console.log('💰 Credits - Available:', availableCredits, 'Total:', totalCredits);
     
     // Get today's credits earned
     const today = new Date();
@@ -309,6 +316,167 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
     console.error('Get dashboard stats error:', error);
     res.status(500).json({ 
       message: 'Failed to get dashboard statistics',
+      error: error.message 
+    });
+  }
+});
+
+// @route   POST /api/stats/seed-test-data
+// @desc    Add test data for user (development only)
+// @access  Private
+router.post('/seed-test-data', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    console.log('🌱 Seeding test data for user:', userId);
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Add some test credits
+    const testCredits = [
+      {
+        userId,
+        amount: 100,
+        type: 'task_completion',
+        source: 'video_ad',
+        description: 'Watched video ad',
+        status: 'vested',
+        isVested: true
+      },
+      {
+        userId,
+        amount: 50,
+        type: 'ad_watch',
+        source: 'propeller_ads',
+        description: 'PropellerAds video reward',
+        status: 'vested',
+        isVested: true
+      },
+      {
+        userId,
+        amount: 25,
+        type: 'daily_bonus',
+        source: 'login_bonus',
+        description: 'Daily login bonus',
+        status: 'vested',
+        isVested: true
+      }
+    ];
+
+    for (const creditData of testCredits) {
+      await Credit.create(creditData);
+    }
+
+    // Add some test coins
+    const testCoins = [
+      {
+        userId,
+        amount: 150,
+        type: 'earned',
+        source: 'app_install',
+        description: 'Instagram app install reward',
+        status: 'completed'
+      },
+      {
+        userId,
+        amount: 100,
+        type: 'earned',
+        source: 'video_ad',
+        description: 'Video ad reward',
+        status: 'completed'
+      }
+    ];
+
+    for (const coinData of testCoins) {
+      await Coin.create(coinData);
+    }
+
+    // Update user balances
+    const totalCredits = await Credit.getUserTotalCredits(userId);
+    const availableCredits = await Credit.getUserAvailableCredits(userId);
+    
+    user.totalCredits = totalCredits;
+    user.availableCredits = availableCredits;
+    user.coinBalance = (user.coinBalance || 0) + 250; // Add test coins
+    user.dailyCreditsEarned = 75; // Set some daily progress
+    await user.save();
+
+    res.json({
+      message: 'Test data seeded successfully',
+      data: {
+        creditsAdded: testCredits.length,
+        coinsAdded: testCoins.length,
+        newTotalCredits: totalCredits,
+        newAvailableCredits: availableCredits,
+        newCoinBalance: user.coinBalance
+      }
+    });
+
+  } catch (error) {
+    console.error('Seed test data error:', error);
+    res.status(500).json({ 
+      message: 'Failed to seed test data',
+      error: error.message 
+    });
+  }
+});
+
+// @route   GET /api/stats/debug/:userId
+// @desc    Debug user data for troubleshooting
+// @access  Private
+router.get('/debug/:userId', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    console.log('🔍 Debug request for user:', userId);
+
+    // Check if user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get raw data counts
+    const creditCount = await Credit.countDocuments({ userId });
+    const coinCount = await Coin.countDocuments({ userId });
+    const appInstallCount = await AppInstall.countDocuments({ userId });
+
+    // Get sample credit records
+    const sampleCredits = await Credit.find({ userId }).limit(5).sort({ createdAt: -1 });
+    
+    // Get sample coin records
+    const sampleCoins = await Coin.find({ userId }).limit(5).sort({ createdAt: -1 });
+
+    // Get user fields
+    const userFields = {
+      id: user._id,
+      email: user.email,
+      totalCredits: user.totalCredits,
+      availableCredits: user.availableCredits,
+      coinBalance: user.coinBalance,
+      dailyCreditsEarned: user.dailyCreditsEarned,
+      vipLevel: user.vipLevel,
+      isVipActive: user.isVipActive
+    };
+
+    res.json({
+      user: userFields,
+      counts: {
+        credits: creditCount,
+        coins: coinCount,
+        appInstalls: appInstallCount
+      },
+      samples: {
+        credits: sampleCredits,
+        coins: sampleCoins
+      }
+    });
+
+  } catch (error) {
+    console.error('Debug error:', error);
+    res.status(500).json({ 
+      message: 'Debug failed',
       error: error.message 
     });
   }
