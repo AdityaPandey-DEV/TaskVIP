@@ -162,17 +162,17 @@ multiLevelReferralSchema.statics.buildReferralChain = async function(referralCod
     level3Referrer = level2Record ? level2Record.level1Referrer : null;
   }
   
-  // Build referral chain
+  // Build referral chain with base percentages (will be adjusted by VIP level during commission processing)
   const referralChain = [];
   
-  // Level 1: 50%
+  // Level 1: Base 50% (will be adjusted to 20-50% based on VIP level)
   referralChain.push({
     level: 1,
     referrerId: level1Referrer._id,
-    percentage: 50
+    percentage: 50 // Base percentage, actual will be calculated by VIP level
   });
   
-  // Level 2: 10%
+  // Level 2: Fixed 10% (not affected by VIP level)
   if (level2Referrer) {
     referralChain.push({
       level: 2,
@@ -181,7 +181,7 @@ multiLevelReferralSchema.statics.buildReferralChain = async function(referralCod
     });
   }
   
-  // Level 3: 5%
+  // Level 3: Fixed 5% (not affected by VIP level)
   if (level3Referrer) {
     referralChain.push({
       level: 3,
@@ -204,9 +204,35 @@ multiLevelReferralSchema.statics.buildReferralChain = async function(referralCod
   return multiLevelReferral;
 };
 
-// Static method to process commission payment
+// Static method to get VIP-based commission percentage for level 1
+multiLevelReferralSchema.statics.getVipCommissionRate = function(vipLevel, referralLevel) {
+  // Level 1 (Direct referrals) - VIP-based rates
+  if (referralLevel === 1) {
+    switch (vipLevel) {
+      case 1: return 30; // VIP 1: 30%
+      case 2: return 40; // VIP 2: 40%  
+      case 3: return 50; // VIP 3: 50%
+      default: return 20; // Non-VIP: 20%
+    }
+  }
+  
+  // Level 2 (Indirect referrals) - Fixed rates
+  if (referralLevel === 2) {
+    return 10; // All VIP levels get 10%
+  }
+  
+  // Level 3 (Deep referrals) - Fixed rates
+  if (referralLevel === 3) {
+    return 5; // All VIP levels get 5%
+  }
+  
+  return 0;
+};
+
+// Static method to process commission payment with VIP rates
 multiLevelReferralSchema.statics.processCommissions = async function(userId, amount, transactionType, transactionId, metadata = {}) {
   const Commission = mongoose.model('Commission');
+  const User = mongoose.model('User');
   
   // Find user's referral record
   const referralRecord = await this.findOne({ userId });
@@ -216,29 +242,39 @@ multiLevelReferralSchema.statics.processCommissions = async function(userId, amo
   
   const commissions = [];
   
-  // Process commissions for each level
+  // Process commissions for each level with VIP-based rates
   for (const chainItem of referralRecord.referralChain) {
-    const commissionAmount = Math.round((amount * chainItem.percentage) / 100);
+    // Get referrer's VIP level
+    const referrer = await User.findById(chainItem.referrerId).select('vipLevel');
+    const referrerVipLevel = referrer ? referrer.vipLevel : 0;
+    
+    // Calculate VIP-based commission percentage
+    const vipCommissionRate = this.getVipCommissionRate(referrerVipLevel, chainItem.level);
+    const commissionAmount = Math.round((amount * vipCommissionRate) / 100);
     
     if (commissionAmount > 0) {
-      // Create commission record
+      // Create commission record with VIP-adjusted rate
       const commission = new Commission({
         fromUserId: userId,
         toUserId: chainItem.referrerId,
         level: chainItem.level,
-        percentage: chainItem.percentage,
+        percentage: vipCommissionRate, // Use VIP-based rate
         originalAmount: amount,
         commissionAmount,
         transactionType,
         transactionId,
-        metadata
+        metadata: {
+          ...metadata,
+          referrerVipLevel,
+          originalPercentage: chainItem.percentage, // Store original percentage
+          vipAdjustedPercentage: vipCommissionRate
+        }
       });
       
       await commission.save();
       commissions.push(commission);
       
       // Update referrer's coin balance
-      const User = mongoose.model('User');
       const Coin = mongoose.model('Coin');
       
       await User.findByIdAndUpdate(chainItem.referrerId, {
@@ -250,13 +286,14 @@ multiLevelReferralSchema.statics.processCommissions = async function(userId, amo
         userId: chainItem.referrerId,
         amount: commissionAmount,
         type: 'earned',
-        source: `referral_commission_level_${chainItem.level}`,
-        description: `Level ${chainItem.level} referral commission from ${transactionType}`,
+        source: `referral_commission_level_${chainItem.level}_vip${referrerVipLevel}`,
+        description: `Level ${chainItem.level} referral commission (VIP${referrerVipLevel}: ${vipCommissionRate}%) from ${transactionType}`,
         status: 'completed',
         metadata: {
           fromUserId: userId,
           originalAmount: amount,
-          percentage: chainItem.percentage,
+          percentage: vipCommissionRate,
+          vipLevel: referrerVipLevel,
           transactionId
         }
       });
@@ -276,13 +313,16 @@ multiLevelReferralSchema.statics.processCommissions = async function(userId, amo
     }
   }
   
+  // Calculate total commission percentage paid (varies by VIP levels)
+  const totalCommissionPaid = commissions.reduce((sum, comm) => sum + comm.percentage, 0);
+  
   // Update total commissions paid for the user who made the purchase
   await this.findOneAndUpdate(
     { userId },
-    { $inc: { totalCommissionsPaid: amount * 0.65 } } // 50% + 10% + 5% = 65% max
+    { $inc: { totalCommissionsPaid: Math.round((amount * totalCommissionPaid) / 100) } }
   );
   
-  return { message: 'Commissions processed successfully', commissions };
+  return { message: 'VIP-based commissions processed successfully', commissions };
 };
 
 // Static method to get referral statistics

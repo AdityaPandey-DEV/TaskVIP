@@ -33,10 +33,26 @@ interface Commission {
   createdAt: string
 }
 
+interface VipRates {
+  level1: {
+    nonVip: number
+    vip1: number
+    vip2: number
+    vip3: number
+  }
+  level2: {
+    all: number
+  }
+  level3: {
+    all: number
+  }
+}
+
 export default function MultiLevelReferrals() {
   const { user } = useAuth()
   const [stats, setStats] = useState<ReferralStats | null>(null)
   const [commissions, setCommissions] = useState<Commission[]>([])
+  const [vipRates, setVipRates] = useState<VipRates | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
   const [showReferralTree, setShowReferralTree] = useState(false)
@@ -45,6 +61,7 @@ export default function MultiLevelReferrals() {
     if (user) {
       fetchReferralStats()
       fetchCommissions()
+      fetchVipRates()
     }
   }, [user])
 
@@ -71,6 +88,18 @@ export default function MultiLevelReferrals() {
       console.error('Error fetching commissions:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchVipRates = async () => {
+    try {
+      const response = await apiRequest('api/multi-level-referrals/vip-rates')
+      const data = await response.json()
+      if (data.success) {
+        setVipRates(data.data)
+      }
+    } catch (error) {
+      console.error('Error fetching VIP rates:', error)
     }
   }
 
@@ -135,9 +164,21 @@ export default function MultiLevelReferrals() {
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white">
-        <h2 className="text-2xl font-bold mb-2">3-Level Referral System</h2>
+        <h2 className="text-2xl font-bold mb-2">VIP-Based Referral System</h2>
         <p className="text-blue-100 mb-4">
-          Earn commissions from 3 levels: Level 1 (50%), Level 2 (10%), Level 3 (5%)
+          {vipRates && user ? (
+            <>
+              Your rates: Level 1 ({vipRates.level1[`vip${user.vipLevel}` as keyof typeof vipRates.level1] || vipRates.level1.nonVip}%), 
+              Level 2 ({vipRates.level2.all}%), Level 3 ({vipRates.level3.all}%)
+              {user.vipLevel < 3 && (
+                <span className="block text-yellow-200 text-sm mt-1">
+                  💡 Upgrade to VIP 3 for 50% Level 1 commissions!
+                </span>
+              )}
+            </>
+          ) : (
+            'Earn higher commissions with VIP membership!'
+          )}
         </p>
         
         <div className="bg-white/10 rounded-lg p-4">
@@ -284,30 +325,69 @@ export default function MultiLevelReferrals() {
                 </div>
               </div>
 
-              {/* How It Works */}
+              {/* How It Works - VIP Based */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">How It Works</h3>
+                <h3 className="text-lg font-semibold mb-4">VIP-Based Commission Rates</h3>
                 <div className="bg-blue-50 rounded-lg p-4">
-                  <div className="space-y-3">
+                  <div className="space-y-4">
+                    {/* Level 1 - VIP Based */}
                     <div className="flex items-start space-x-3">
                       <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-white text-xs font-bold">1</div>
-                      <div>
-                        <div className="font-medium">Level 1 (Direct) - 50%</div>
-                        <div className="text-sm text-gray-600">When someone you refer makes a purchase, you earn 50% commission</div>
+                      <div className="flex-1">
+                        <div className="font-medium mb-2">Level 1 (Direct) - VIP-Based Rates</div>
+                        {vipRates && (
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                            <div className="bg-white rounded p-2 text-center">
+                              <div className="font-medium text-gray-600">Non-VIP</div>
+                              <div className="text-lg font-bold text-gray-800">{vipRates.level1.nonVip}%</div>
+                            </div>
+                            <div className="bg-white rounded p-2 text-center">
+                              <div className="font-medium text-blue-600">VIP 1</div>
+                              <div className="text-lg font-bold text-blue-800">{vipRates.level1.vip1}%</div>
+                            </div>
+                            <div className="bg-white rounded p-2 text-center">
+                              <div className="font-medium text-purple-600">VIP 2</div>
+                              <div className="text-lg font-bold text-purple-800">{vipRates.level1.vip2}%</div>
+                            </div>
+                            <div className="bg-white rounded p-2 text-center">
+                              <div className="font-medium text-yellow-600">VIP 3</div>
+                              <div className="text-lg font-bold text-yellow-800">{vipRates.level1.vip3}%</div>
+                            </div>
+                          </div>
+                        )}
+                        <div className="text-sm text-gray-600 mt-2">Higher VIP levels earn more from direct referrals!</div>
                       </div>
                     </div>
+                    
+                    {/* Level 2 - Fixed */}
                     <div className="flex items-start space-x-3">
                       <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">2</div>
                       <div>
-                        <div className="font-medium">Level 2 (Indirect) - 10%</div>
-                        <div className="text-sm text-gray-600">When your referrals refer others, you earn 10% from their purchases</div>
+                        <div className="font-medium">Level 2 (Indirect) - {vipRates?.level2.all || 10}%</div>
+                        <div className="text-sm text-gray-600">Fixed rate for all VIP levels from indirect referrals</div>
                       </div>
                     </div>
+                    
+                    {/* Level 3 - Fixed */}
                     <div className="flex items-start space-x-3">
                       <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">3</div>
                       <div>
-                        <div className="font-medium">Level 3 (Deep) - 5%</div>
-                        <div className="text-sm text-gray-600">From third-level referrals, you earn 5% commission</div>
+                        <div className="font-medium">Level 3 (Deep) - {vipRates?.level3.all || 5}%</div>
+                        <div className="text-sm text-gray-600">Fixed rate for all VIP levels from deep referrals</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* VIP Upgrade CTA */}
+                  <div className="mt-4 p-3 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg text-white">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-semibold">Upgrade to VIP 3 for Maximum Earnings!</div>
+                        <div className="text-sm opacity-90">Get 50% commission from direct referrals</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold">50%</div>
+                        <div className="text-xs">vs {vipRates?.level1.nonVip || 20}% Non-VIP</div>
                       </div>
                     </div>
                   </div>

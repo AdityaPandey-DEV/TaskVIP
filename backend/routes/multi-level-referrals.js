@@ -300,6 +300,39 @@ router.post('/process-commission', auth, async (req, res) => {
   }
 });
 
+// Get VIP commission rates
+router.get('/vip-rates', auth, async (req, res) => {
+  try {
+    const vipRates = {
+      level1: {
+        nonVip: MultiLevelReferral.getVipCommissionRate(0, 1),
+        vip1: MultiLevelReferral.getVipCommissionRate(1, 1),
+        vip2: MultiLevelReferral.getVipCommissionRate(2, 1),
+        vip3: MultiLevelReferral.getVipCommissionRate(3, 1)
+      },
+      level2: {
+        all: MultiLevelReferral.getVipCommissionRate(1, 2) // Same for all VIP levels
+      },
+      level3: {
+        all: MultiLevelReferral.getVipCommissionRate(1, 3) // Same for all VIP levels
+      }
+    };
+    
+    res.json({
+      success: true,
+      data: vipRates,
+      message: 'VIP commission rates retrieved successfully'
+    });
+  } catch (error) {
+    console.error('Get VIP rates error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get VIP commission rates',
+      error: error.message
+    });
+  }
+});
+
 // Get leaderboard
 router.get('/leaderboard', auth, async (req, res) => {
   try {
