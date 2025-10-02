@@ -303,55 +303,80 @@ export default function DashboardPage() {
           </div>
 
           {/* Dashboard Content */}
-          <div className="p-4 lg:p-6 space-y-6">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Available Credits */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                    <Coins className="w-6 h-6 text-white" />
+          <div className="p-3 sm:p-4 lg:p-6 space-y-4 lg:space-y-6">
+            {/* Mobile Welcome Header */}
+            <div className="lg:hidden bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-lg font-bold text-slate-800">Welcome back, {user.firstName}! 👋</h1>
+                  <p className="text-sm text-slate-600">Ready to earn some coins?</p>
+                </div>
+                {user.vipLevel > 0 && (
+                  <div className="flex items-center space-x-1 px-2 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full">
+                    <Crown className="w-3 h-3 text-white" />
+                    <span className="text-white font-medium text-xs">VIP {user.vipLevel}</span>
                   </div>
-                  <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">Available</span>
+                )}
+              </div>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+              {/* Available Credits */}
+              <div className="bg-white rounded-xl lg:rounded-2xl p-4 lg:p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-3 lg:mb-4">
+                  <div className="flex items-center justify-between lg:justify-start lg:space-x-3 mb-2 lg:mb-0">
+                    <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg lg:rounded-xl flex items-center justify-center">
+                      <Coins className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full lg:hidden">Available</span>
+                  </div>
+                  <span className="hidden lg:inline-flex text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">Available</span>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-2xl font-bold text-slate-800">{stats?.availableCredits || 0}</p>
-                  <p className="text-sm text-slate-500">Credits Ready</p>
+                  <p className="text-xl lg:text-2xl font-bold text-slate-800">{stats?.availableCredits || 0}</p>
+                  <p className="text-xs lg:text-sm text-slate-500">Credits Ready</p>
                 </div>
               </div>
 
               {/* Total Earned */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-white" />
+              <div className="bg-white rounded-xl lg:rounded-2xl p-4 lg:p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-3 lg:mb-4">
+                  <div className="flex items-center justify-between lg:justify-start lg:space-x-3 mb-2 lg:mb-0">
+                    <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg lg:rounded-xl flex items-center justify-center">
+                      <TrendingUp className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full lg:hidden">Total</span>
                   </div>
-                  <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">Total</span>
+                  <span className="hidden lg:inline-flex text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">Total</span>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-2xl font-bold text-slate-800">{stats?.totalCredits || 0}</p>
-                  <p className="text-sm text-slate-500">Total Earned</p>
+                  <p className="text-xl lg:text-2xl font-bold text-slate-800">{stats?.totalCredits || 0}</p>
+                  <p className="text-xs lg:text-sm text-slate-500">Total Earned</p>
                 </div>
               </div>
 
               {/* Daily Progress */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
-                    <Target className="w-6 h-6 text-white" />
+              <div className="bg-white rounded-xl lg:rounded-2xl p-4 lg:p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-3 lg:mb-4">
+                  <div className="flex items-center justify-between lg:justify-start lg:space-x-3 mb-2 lg:mb-0">
+                    <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg lg:rounded-xl flex items-center justify-center">
+                      <Target className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded-full lg:hidden">Today</span>
                   </div>
-                  <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded-full">Today</span>
+                  <span className="hidden lg:inline-flex text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded-full">Today</span>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-2xl font-bold text-slate-800">
+                  <p className="text-xl lg:text-2xl font-bold text-slate-800">
                     {stats?.dailyCreditsEarned || 0}/{stats?.dailyCreditLimit || 0}
                   </p>
-                  <p className="text-sm text-slate-500">Daily Progress</p>
+                  <p className="text-xs lg:text-sm text-slate-500">Daily Progress</p>
                 </div>
-                <div className="mt-3">
-                  <div className="w-full bg-slate-100 rounded-full h-2">
+                <div className="mt-2 lg:mt-3">
+                  <div className="w-full bg-slate-100 rounded-full h-1.5 lg:h-2">
                     <div 
-                      className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-300"
+                      className="bg-gradient-to-r from-purple-500 to-purple-600 h-1.5 lg:h-2 rounded-full transition-all duration-300"
                       style={{ 
                         width: `${Math.min(((stats?.dailyCreditsEarned || 0) / (stats?.dailyCreditLimit || 1)) * 100, 100)}%` 
                       }}
@@ -361,27 +386,30 @@ export default function DashboardPage() {
               </div>
 
               {/* Streak */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
-                    <Zap className="w-6 h-6 text-white" />
+              <div className="bg-white rounded-xl lg:rounded-2xl p-4 lg:p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-3 lg:mb-4">
+                  <div className="flex items-center justify-between lg:justify-start lg:space-x-3 mb-2 lg:mb-0">
+                    <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg lg:rounded-xl flex items-center justify-center">
+                      <Zap className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded-full lg:hidden">Streak</span>
                   </div>
-                  <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded-full">Streak</span>
+                  <span className="hidden lg:inline-flex text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded-full">Streak</span>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-2xl font-bold text-slate-800">{stats?.streak || 0}</p>
-                  <p className="text-sm text-slate-500">Days Active</p>
+                  <p className="text-xl lg:text-2xl font-bold text-slate-800">{stats?.streak || 0}</p>
+                  <p className="text-xs lg:text-sm text-slate-500">Days Active</p>
                 </div>
               </div>
             </div>
 
             {/* Reward System */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="p-6 border-b border-slate-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-bold text-slate-800">🎯 Earn Rewards</h2>
-                    <p className="text-slate-600">Complete tasks and earn coins that you can withdraw as real money</p>
+            <div className="bg-white rounded-xl lg:rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="p-4 lg:p-6 border-b border-slate-200">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                  <div className="mb-2 sm:mb-0">
+                    <h2 className="text-lg lg:text-xl font-bold text-slate-800">🎯 Earn Rewards</h2>
+                    <p className="text-sm lg:text-base text-slate-600">Complete tasks and earn coins that you can withdraw as real money</p>
                   </div>
                   <div className="hidden sm:flex items-center space-x-2 text-sm text-slate-500">
                     <Clock className="w-4 h-4" />
@@ -389,51 +417,51 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <div className="p-6">
+              <div className="p-4 lg:p-6">
                 <RewardSystem />
               </div>
             </div>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
               {/* Referral Program */}
-              <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-white">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
-                    <Users className="w-6 h-6 text-white" />
+              <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl lg:rounded-2xl p-4 lg:p-6 text-white">
+                <div className="flex items-center justify-between mb-3 lg:mb-4">
+                  <div className="w-10 h-10 lg:w-12 lg:h-12 bg-white bg-opacity-20 rounded-lg lg:rounded-xl flex items-center justify-center">
+                    <Users className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
                   </div>
                   <span className="text-xs font-medium bg-white bg-opacity-20 px-2 py-1 rounded-full">Referrals</span>
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-3 lg:space-y-4">
                   <div>
-                    <h3 className="text-lg font-semibold mb-2">Invite Friends & Earn</h3>
+                    <h3 className="text-base lg:text-lg font-semibold mb-1 lg:mb-2">Invite Friends & Earn</h3>
                     <p className="text-blue-100 text-sm">Share your referral code and earn bonus credits for every friend who joins!</p>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-white bg-opacity-10 rounded-lg">
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <p className="text-xs text-blue-100">Your Referral Code</p>
-                      <p className="font-mono font-bold">{user.referralCode}</p>
+                      <p className="font-mono font-bold text-sm lg:text-base truncate">{user.referralCode}</p>
                     </div>
                     <button 
                       onClick={copyReferralLink}
-                      className="p-2 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition-colors"
+                      className="p-2 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 transition-colors ml-2"
                     >
                       <Copy className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 text-center">
+                  <div className="grid grid-cols-2 gap-3 lg:gap-4 text-center">
                     <div>
-                      <p className="text-2xl font-bold">{stats?.referralStats.totalReferrals || 0}</p>
+                      <p className="text-xl lg:text-2xl font-bold">{stats?.referralStats.totalReferrals || 0}</p>
                       <p className="text-xs text-blue-100">Total Referrals</p>
                     </div>
                     <div>
-                      <p className="text-2xl font-bold">{stats?.referralStats.totalEarnings || 0}</p>
+                      <p className="text-xl lg:text-2xl font-bold">{stats?.referralStats.totalEarnings || 0}</p>
                       <p className="text-xs text-blue-100">Bonus Earned</p>
                     </div>
                   </div>
                   <Link 
                     href="/referrals" 
-                    className="flex items-center justify-center space-x-2 w-full py-3 bg-white text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors"
+                    className="flex items-center justify-center space-x-2 w-full py-2.5 lg:py-3 bg-white text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors text-sm lg:text-base"
                   >
                     <span>View Details</span>
                     <ArrowRight className="w-4 h-4" />
@@ -442,18 +470,18 @@ export default function DashboardPage() {
               </div>
 
               {/* VIP Status */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center">
-                    <Crown className="w-6 h-6 text-white" />
+              <div className="bg-white rounded-xl lg:rounded-2xl p-4 lg:p-6 shadow-sm border border-slate-200">
+                <div className="flex items-center justify-between mb-3 lg:mb-4">
+                  <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg lg:rounded-xl flex items-center justify-center">
+                    <Crown className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
                   </div>
                   <span className="text-xs font-medium text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">VIP</span>
                 </div>
                 
                 {user.vipLevel > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3 lg:space-y-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-slate-800 mb-2">VIP Level {user.vipLevel}</h3>
+                      <h3 className="text-base lg:text-lg font-semibold text-slate-800 mb-1 lg:mb-2">VIP Level {user.vipLevel}</h3>
                       <p className="text-slate-600 text-sm">You're earning {user.vipLevel === 1 ? '20%' : user.vipLevel === 2 ? '50%' : '100%'} more on all tasks!</p>
                     </div>
                     <div className="p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
@@ -466,35 +494,35 @@ export default function DashboardPage() {
                     </div>
                     <Link 
                       href="/vip" 
-                      className="flex items-center justify-center space-x-2 w-full py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg font-medium hover:from-yellow-600 hover:to-orange-600 transition-colors"
+                      className="flex items-center justify-center space-x-2 w-full py-2.5 lg:py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg font-medium hover:from-yellow-600 hover:to-orange-600 transition-colors text-sm lg:text-base"
                     >
                       <span>Manage VIP</span>
                       <Crown className="w-4 h-4" />
                     </Link>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3 lg:space-y-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-slate-800 mb-2">Upgrade to VIP</h3>
+                      <h3 className="text-base lg:text-lg font-semibold text-slate-800 mb-1 lg:mb-2">Upgrade to VIP</h3>
                       <p className="text-slate-600 text-sm">Unlock higher earning potential with VIP membership!</p>
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2 text-sm text-slate-600">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                         <span>Up to 2x more coins</span>
                       </div>
                       <div className="flex items-center space-x-2 text-sm text-slate-600">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                         <span>Higher daily limits</span>
                       </div>
                       <div className="flex items-center space-x-2 text-sm text-slate-600">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                         <span>Priority support</span>
                       </div>
                     </div>
                     <Link 
                       href="/vip" 
-                      className="flex items-center justify-center space-x-2 w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-colors"
+                      className="flex items-center justify-center space-x-2 w-full py-2.5 lg:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-colors text-sm lg:text-base"
                     >
                       <span>Upgrade Now</span>
                       <ArrowRight className="w-4 h-4" />
@@ -505,30 +533,30 @@ export default function DashboardPage() {
             </div>
 
             {/* Mobile App Promotion */}
-            <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-2xl p-6 text-white">
+            <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl lg:rounded-2xl p-4 lg:p-6 text-white">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                      <Smartphone className="w-5 h-5" />
+                    <div className="w-8 h-8 lg:w-10 lg:h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                      <Smartphone className="w-4 h-4 lg:w-5 lg:h-5" />
                     </div>
                     <div>
-                      <h3 className="font-semibold">Get the Mobile App</h3>
-                      <p className="text-slate-300 text-sm">Earn on the go with our mobile app</p>
+                      <h3 className="font-semibold text-sm lg:text-base">Get the Mobile App</h3>
+                      <p className="text-slate-300 text-xs lg:text-sm">Earn on the go with our mobile app</p>
                     </div>
                   </div>
-                  <p className="text-slate-300 text-sm mb-4">
+                  <p className="text-slate-300 text-sm mb-4 hidden sm:block">
                     Download our mobile app for the best TaskVIP experience. Complete tasks anywhere, anytime!
                   </p>
                   <div className="flex space-x-3">
-                    <button className="px-4 py-2 bg-white text-slate-800 rounded-lg font-medium text-sm hover:bg-slate-100 transition-colors">
+                    <button className="px-3 py-1.5 lg:px-4 lg:py-2 bg-white text-slate-800 rounded-lg font-medium text-xs lg:text-sm hover:bg-slate-100 transition-colors">
                       Coming Soon
                     </button>
                   </div>
                 </div>
-                <div className="hidden sm:block ml-6">
-                  <div className="w-20 h-20 bg-white bg-opacity-10 rounded-2xl flex items-center justify-center">
-                    <Smartphone className="w-10 h-10 text-white" />
+                <div className="hidden sm:block ml-4 lg:ml-6">
+                  <div className="w-16 h-16 lg:w-20 lg:h-20 bg-white bg-opacity-10 rounded-xl lg:rounded-2xl flex items-center justify-center">
+                    <Smartphone className="w-8 h-8 lg:w-10 lg:h-10 text-white" />
                   </div>
                 </div>
               </div>
