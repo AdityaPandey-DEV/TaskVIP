@@ -37,6 +37,9 @@ export const metadata: Metadata = {
     width: 'device-width',
     initialScale: 1,
   },
+  other: {
+    'monetag': '6bdb669bae18ef01035af9e5c0cb6fe1',
+  },
 }
 
 export default function RootLayout({
