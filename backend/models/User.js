@@ -167,10 +167,12 @@ userSchema.pre('save', async function(next) {
   }
 });
 
-// Generate referral code
+// Generate referral code based on email
 userSchema.pre('save', function(next) {
   if (this.isNew && !this.referralCode) {
-    this.referralCode = this._id.toString().slice(-8).toUpperCase();
+    // Generate referral code from email
+    const emailHash = require('crypto').createHash('md5').update(this.email).digest('hex');
+    this.referralCode = emailHash.slice(0, 8).toUpperCase();
   }
   next();
 });

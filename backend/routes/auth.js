@@ -1,11 +1,13 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const Referral = require('../models/Referral');
 const { authenticateToken, rateLimitSensitive } = require('../middleware/auth');
 
 const router = express.Router();
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -410,6 +412,119 @@ router.post('/reset-password', rateLimitSensitive(), [
 // @access  Private
 router.post('/logout', authenticateToken, (req, res) => {
   res.json({ message: 'Logout successful' });
+});
+
+// @route   POST /api/auth/google
+// @desc    Google OAuth authentication
+// @access  Public
+router.post('/google', async (req, res) => {
+  try {
+    const { credential } = req.body;
+
+    if (!credential) {
+      return res.status(400).json({ message: 'Google credential is required' });
+    }
+
+    // Verify the Google token
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+
+    const payload = ticket.getPayload();
+    const { email, given_name, family_name, picture, email_verified } = payload;
+
+    if (!email_verified) {
+      return res.status(400).json({ message: 'Google email not verified' });
+    }
+
+    // Check if user already exists
+    let user = await User.findOne({ email: email.toLowerCase() });
+
+    if (user) {
+      // User exists, log them in
+      const token = generateToken(user._id);
+
+      // Update last login
+      user.lastLogin = new Date();
+      await user.save();
+
+      res.json({
+        token,
+        user: {
+          id: user._id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          phone: user.phone,
+          referralCode: user.referralCode,
+          vipLevel: user.vipLevel,
+          vipExpiry: user.vipExpiry,
+          isVipActive: user.isVipActive(),
+          totalCredits: user.totalCredits,
+          availableCredits: user.availableCredits,
+          kycStatus: user.kycStatus,
+          streak: user.streak,
+          badges: user.badges,
+          createdAt: user.createdAt
+        }
+      });
+    } else {
+      // Create new user with Google data
+      const newUser = new User({
+        email: email.toLowerCase(),
+        firstName: given_name || 'User',
+        lastName: family_name || '',
+        phone: '', // Phone not required for Google sign-up
+        password: 'google-oauth', // Placeholder password for Google users
+        isEmailVerified: true, // Google emails are pre-verified
+        profilePicture: picture,
+        deviceInfo: {
+          ip: req.ip,
+          userAgent: req.get('User-Agent'),
+          deviceId: req.headers['x-device-id'] || 'google-oauth'
+        }
+      });
+
+      await newUser.save();
+
+      // Create referral with default "0000" code
+      try {
+        await Referral.createReferral('0000', newUser._id);
+      } catch (error) {
+        console.error('Error creating referral for Google user:', error);
+        // Don't fail registration if referral creation fails
+      }
+
+      // Generate token
+      const token = generateToken(newUser._id);
+
+      res.json({
+        token,
+        user: {
+          id: newUser._id,
+          email: newUser.email,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+          phone: newUser.phone,
+          referralCode: newUser.referralCode,
+          vipLevel: newUser.vipLevel,
+          vipExpiry: newUser.vipExpiry,
+          isVipActive: newUser.isVipActive(),
+          totalCredits: newUser.totalCredits,
+          availableCredits: newUser.availableCredits,
+          kycStatus: newUser.kycStatus,
+          streak: newUser.streak,
+          badges: newUser.badges,
+          createdAt: newUser.createdAt
+        }
+      });
+    }
+
+  } catch (error) {
+    console.error('Google authentication error:', error);
+    res.status(500).json({ message: 'Google authentication failed' });
+  }
 });
 
 module.exports = router;

@@ -27,6 +27,7 @@ interface AuthContextType {
   user: User | null
   loading: boolean
   login: (email: string, password: string) => Promise<void>
+  googleLogin: (credential: string) => Promise<void>
   register: (userData: RegisterData) => Promise<void>
   logout: () => void
   updateUser: (userData: Partial<User>) => void
@@ -106,6 +107,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const googleLogin = async (credential: string) => {
+    try {
+      const response = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ credential })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        Cookies.set('token', data.token, { expires: 7 })
+        setUser(data.user)
+        toast.success('Google Sign-In successful!')
+        router.push('/dashboard')
+      } else {
+        throw new Error(data.message || 'Google Sign-In failed')
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Google Sign-In failed')
+      throw error
+    }
+  }
+
   const register = async (userData: RegisterData) => {
     try {
       const response = await fetch('/api/auth/register', {
@@ -149,6 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     loading,
     login,
+    googleLogin,
     register,
     logout,
     updateUser

@@ -8,6 +8,7 @@ Your TaskVIP backend needs these API keys for full functionality:
 - **MongoDB Atlas** - Database connection
 - **JWT Secret** - Authentication security
 - **Gmail SMTP** - Email verification
+- **Google OAuth** - Social login (recommended)
 
 ### **🟡 Important (Required for payments):**
 - **Razorpay** - Payment processing (India)
@@ -123,7 +124,59 @@ EMAIL_PASS=abcd efgh ijkl mnop
 
 ---
 
-## 💳 **4. Razorpay (Payment Gateway)**
+## 🔐 **4. Google OAuth (Social Login)**
+
+### **Step 1: Create Google Cloud Project**
+1. Go to: https://console.cloud.google.com/
+2. Click **"Select a project"** → **"New Project"**
+3. Enter project name: **"TaskVIP-OAuth"**
+4. Click **"Create"**
+
+### **Step 2: Configure OAuth Consent Screen**
+1. Go to **"APIs & Services"** → **"OAuth consent screen"**
+2. Choose **"External"** (for public app)
+3. Fill in required fields:
+   - **App name**: `TaskVIP`
+   - **User support email**: Your email
+   - **Developer contact**: Your email
+4. **Scopes**: Add `../auth/userinfo.email` and `../auth/userinfo.profile`
+5. **Test users**: Add your email
+6. Click **"Save and Continue"**
+
+### **Step 3: Create OAuth Credentials**
+1. Go to **"APIs & Services"** → **"Credentials"**
+2. Click **"+ Create Credentials"** → **"OAuth 2.0 Client IDs"**
+3. **Application type**: `Web application`
+4. **Name**: `TaskVIP Web Client`
+5. **Authorized JavaScript origins**:
+   ```
+   http://localhost:3000
+   https://task-vip.vercel.app
+   https://your-domain.com
+   ```
+6. **Authorized redirect URIs**: Same as above
+7. Click **"Create"**
+8. **Copy the Client ID** (starts with numbers, ends with `.apps.googleusercontent.com`)
+
+### **Step 4: Configure Environment Variables**
+
+**Backend (.env):**
+```env
+GOOGLE_CLIENT_ID=123456789-abcdefghijklmnop.apps.googleusercontent.com
+```
+
+**Frontend (.env.local):**
+```env
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=123456789-abcdefghijklmnop.apps.googleusercontent.com
+```
+
+### **Step 5: Deploy Configuration**
+- **Vercel**: Add `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in project settings
+- **Render**: Add `GOOGLE_CLIENT_ID` in service environment
+
+---
+
+## 💳 **5. Razorpay (Payment Gateway)**
 
 ### **Step 1: Create Razorpay Account**
 1. Go to: https://razorpay.com
@@ -285,13 +338,14 @@ ADSTERRA_API_KEY=your-adsterra-key
 1. ✅ MongoDB Atlas - Database
 2. ✅ JWT Secret - Authentication  
 3. ✅ Gmail SMTP - Email verification
+4. ✅ Google OAuth - Social login
 
 ### **Phase 2 (Payments):**
-4. 🟡 Razorpay - Payment processing
+5. 🟡 Razorpay - Payment processing
 
 ### **Phase 3 (Monetization):**
-5. 🟢 PropellerAds - Ad revenue
-6. 🟢 Adsterra - Additional ad revenue
+6. 🟢 PropellerAds - Ad revenue
+7. 🟢 Adsterra - Additional ad revenue
 
 ---
 
