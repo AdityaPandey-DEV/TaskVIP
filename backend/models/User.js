@@ -350,4 +350,14 @@ userSchema.methods.hasReachedDailyEarningLimit = function() {
   return this.dailyCreditsEarned >= this.getMaxDailyEarning();
 };
 
+// Method to get daily credit limit (alias for getMaxDailyEarning)
+userSchema.methods.getDailyCreditLimit = function() {
+  return this.getMaxDailyEarning();
+};
+
+// Method to check if user has reached daily credit limit (alias for hasReachedDailyEarningLimit)
+userSchema.methods.hasReachedDailyLimit = function() {
+  return this.hasReachedDailyEarningLimit();
+};
+
 module.exports = mongoose.model('User', userSchema);
