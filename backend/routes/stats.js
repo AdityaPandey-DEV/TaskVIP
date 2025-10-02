@@ -1,11 +1,12 @@
 const express = require('express');
 const User = require('../models/User');
-const Credit = require('../models/Credit');
-const VipPurchase = require('../models/VipPurchase');
-const Wallet = require('../models/Wallet');
-const Coin = require('../models/Coin');
-const AppInstall = require('../models/AppInstall');
-const { MultiLevelReferral } = require('../models/MultiLevelReferral');
+// OLD MODELS REMOVED - Using User model stats only (NEW IMPLEMENTATION)
+// const Credit = require('../models/Credit');
+// const VipPurchase = require('../models/VipPurchase');
+// const Wallet = require('../models/Wallet');
+// const Coin = require('../models/Coin');
+// const AppInstall = require('../models/AppInstall');
+// const { MultiLevelReferral } = require('../models/MultiLevelReferral');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
@@ -149,12 +150,12 @@ router.get('/recent-activity', async (req, res) => {
 });
 
 // @route   GET /api/stats/dashboard
-// @desc    Get user's comprehensive dashboard statistics
+// @desc    Get user's comprehensive dashboard statistics (User model only - NEW IMPLEMENTATION)
 // @access  Private
 router.get('/dashboard', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    console.log('📊 Dashboard stats requested for user:', userId);
+    console.log('📊 Dashboard stats requested for user (NEW IMPLEMENTATION):', userId);
     
     const user = await User.findById(userId);
 
@@ -163,140 +164,61 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    console.log('✅ User found:', user.email, 'VIP Level:', user.vipLevel);
+    console.log('✅ User found:', user.email, 'Using User model stats only');
 
-    // Get credit statistics
-    console.log('💰 Fetching credit statistics...');
-    const availableCredits = await Credit.getUserAvailableCredits(userId);
-    const totalCredits = await Credit.getUserTotalCredits(userId);
-    console.log('💰 Credits - Available:', availableCredits, 'Total:', totalCredits);
+    // Get comprehensive stats directly from user model (FAST!)
+    const stats = user.getDashboardStats();
     
-    // Get today's credits earned
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const todayCredits = await Credit.aggregate([
-      {
-        $match: {
-          userId: new require('mongoose').Types.ObjectId(userId),
-          createdAt: { $gte: today, $lt: tomorrow },
-          amount: { $gt: 0 }
-        }
-      },
-      { $group: { _id: null, total: { $sum: '$amount' } } }
-    ]);
-    const dailyCreditsEarned = todayCredits.length > 0 ? todayCredits[0].total : 0;
-
-    // Get coin statistics
-    const coinStats = await Coin.aggregate([
-      { $match: { userId: new require('mongoose').Types.ObjectId(userId), status: 'completed' } },
-      {
-        $group: {
-          _id: '$type',
-          total: { $sum: '$amount' },
-          count: { $sum: 1 }
-        }
-      }
-    ]);
-
-    const totalCoinsEarned = coinStats
-      .filter(stat => stat._id === 'earned')
-      .reduce((sum, stat) => sum + stat.total, 0);
-
-    // Get task completion statistics
-    const completedTasks = await Credit.countDocuments({
-      userId,
-      type: { $in: ['task_completion', 'ad_watch', 'survey_completion'] },
-      status: 'vested'
+    console.log('📊 Stats from User model:', {
+      creditsReady: stats.creditsReady,
+      totalEarned: stats.totalEarned,
+      dailyProgress: stats.dailyProgress,
+      currentStreak: stats.currentStreak
     });
-
-    const totalTasks = await Credit.countDocuments({
-      userId,
-      type: { $in: ['task_completion', 'ad_watch', 'survey_completion'] }
-    });
-
-    // Get app install statistics
-    const appInstallStats = await AppInstall.getInstallStats(userId);
-    const completedAppInstalls = appInstallStats.summary.completedInstalls || 0;
-
-    // Calculate streak (consecutive days with activity)
-    let streak = 0;
-    const checkDate = new Date();
-    checkDate.setHours(0, 0, 0, 0);
-
-    for (let i = 0; i < 365; i++) { // Check up to 365 days
-      const dayStart = new Date(checkDate);
-      const dayEnd = new Date(checkDate);
-      dayEnd.setDate(dayEnd.getDate() + 1);
-
-      const hasActivity = await Credit.countDocuments({
-        userId,
-        createdAt: { $gte: dayStart, $lt: dayEnd },
-        amount: { $gt: 0 }
-      });
-
-      if (hasActivity > 0) {
-        streak++;
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else {
-        break;
-      }
-    }
-
-    // Get referral statistics
-    const referralStats = await MultiLevelReferral.getReferralStats(userId);
-
-    // Get recent activity
-    const recentActivity = await Credit.find({
-      userId,
-      amount: { $gt: 0 }
-    })
-    .sort({ createdAt: -1 })
-    .limit(10)
-    .select('amount type source description createdAt');
-
-    // Calculate daily progress
-    const dailyCreditLimit = user.getDailyCreditLimit();
-    const dailyProgress = Math.min((dailyCreditsEarned / dailyCreditLimit) * 100, 100);
 
     res.json({
-      // Credit stats
-      availableCredits: Math.round(availableCredits),
-      totalCredits: Math.round(totalCredits),
-      dailyCreditsEarned: Math.round(dailyCreditsEarned),
-      dailyCreditLimit: Math.round(dailyCreditLimit),
-      dailyProgress: Math.round(dailyProgress),
+      // Financial Stats (directly from User model)
+      availableCredits: Math.round(stats.creditsReady),
+      creditsReady: Math.round(stats.creditsReady),
+      totalCredits: Math.round(stats.totalEarned), // Total earned
+      totalEarned: Math.round(stats.totalEarned),
+      totalWithdrawn: Math.round(stats.totalWithdrawn),
+      coinBalance: Math.round(stats.coinBalance),
 
-      // Coin stats
-      coinBalance: user.coinBalance || 0,
-      totalCoinsEarned: Math.round(totalCoinsEarned),
+      // Daily Stats (directly from User model)
+      dailyCreditsEarned: Math.round(stats.dailyCreditsEarned),
+      dailyCreditLimit: Math.round(stats.dailyCreditLimit),
+      dailyProgress: Math.round(stats.dailyProgress),
 
-      // Task stats
-      completedTasks: completedTasks + completedAppInstalls,
-      totalTasks: totalTasks + appInstallStats.summary.totalInstalls,
-      
-      // App install stats
-      appInstallStats: appInstallStats.summary,
+      // Activity Stats (directly from User model)
+      streak: stats.currentStreak,
+      currentStreak: stats.currentStreak,
+      daysActive: stats.daysActive,
 
-      // User engagement
-      streak,
-      
-      // Referral stats
+      // Task Stats (directly from User model)
+      totalTasks: stats.totalTasksAssigned,
+      completedTasks: stats.totalTasksCompleted,
+      totalTasksAssigned: stats.totalTasksAssigned,
+      totalTasksCompleted: stats.totalTasksCompleted,
+
+      // Referral Stats (directly from User model)
       referralStats: {
-        totalReferrals: referralStats.totalReferrals || 0,
-        totalEarnings: Math.round(referralStats.totalCommissionsEarned || 0),
-        activeReferrals: referralStats.activeReferrals || 0,
-        level1Referrals: referralStats.level1Referrals || 0,
-        level2Referrals: referralStats.level2Referrals || 0,
-        level3Referrals: referralStats.level3Referrals || 0
+        totalReferrals: stats.totalDirectReferrals + stats.totalIndirectReferrals + stats.totalDeepReferrals,
+        totalEarnings: Math.round(stats.totalReferralEarnings),
+        activeReferrals: stats.totalDirectReferrals,
+        level1Referrals: stats.totalDirectReferrals,
+        level2Referrals: stats.totalIndirectReferrals,
+        level3Referrals: stats.totalDeepReferrals
       },
 
-      // Recent activity
-      recentActivity,
+      // Referral Chain
+      referralChain: {
+        level1: stats.level1ReferralUserId,
+        level2: stats.level2ReferralUserId,
+        level3: stats.level3ReferralUserId
+      },
 
-      // User info
+      // User Info
       user: {
         id: user._id,
         firstName: user.firstName,
@@ -306,9 +228,14 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
         isVipActive: user.isVipActive,
         vipExpiry: user.vipExpiry,
         referralCode: user.referralCode,
-        totalCredits: user.totalCredits,
-        availableCredits: user.availableCredits,
-        coinBalance: user.coinBalance
+        
+        // Direct access to User model stats
+        creditsReady: user.creditsReady,
+        totalEarned: user.totalEarned,
+        totalWithdrawn: user.totalWithdrawn,
+        coinBalance: user.coinBalance,
+        daysActive: user.daysActive,
+        currentStreak: user.currentStreak
       }
     });
 
@@ -424,271 +351,83 @@ router.get('/dashboard-v2', authenticateToken, async (req, res) => {
   }
 });
 
-// @route   POST /api/stats/migrate-user-data
-// @desc    Migrate existing Credit/Coin data to User model stats
+// @route   POST /api/stats/cleanup-database
+// @desc    Clean up old database collections (admin only)
 // @access  Private
-router.post('/migrate-user-data', authenticateToken, async (req, res) => {
+router.post('/cleanup-database', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    console.log('🔄 Migrating user data for:', userId);
-
     const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    
+    // Only allow admin to run cleanup
+    if (user.email !== process.env.ADMIN_EMAIL) {
+      return res.status(403).json({ message: 'Admin access required' });
     }
 
-    // Get existing credit data
-    const availableCredits = await Credit.getUserAvailableCredits(userId);
-    const totalCredits = await Credit.getUserTotalCredits(userId);
-    
-    // Get today's credits earned
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    console.log('🗑️  Database cleanup requested by admin:', user.email);
 
-    const todayCredits = await Credit.aggregate([
-      {
-        $match: {
-          userId: new require('mongoose').Types.ObjectId(userId),
-          createdAt: { $gte: today, $lt: tomorrow },
-          amount: { $gt: 0 }
-        }
-      },
-      { $group: { _id: null, total: { $sum: '$amount' } } }
-    ]);
-    const dailyCreditsEarned = todayCredits.length > 0 ? todayCredits[0].total : 0;
-
-    // Get coin statistics
-    const coinStats = await Coin.aggregate([
-      { $match: { userId: new require('mongoose').Types.ObjectId(userId), status: 'completed' } },
-      {
-        $group: {
-          _id: '$type',
-          total: { $sum: '$amount' },
-          count: { $sum: 1 }
-        }
-      }
-    ]);
-
-    const totalCoinsEarned = coinStats
-      .filter(stat => stat._id === 'earned')
-      .reduce((sum, stat) => sum + stat.total, 0);
-
-    // Get task completion statistics
-    const completedTasks = await Credit.countDocuments({
-      userId,
-      type: { $in: ['task_completion', 'ad_watch', 'survey_completion'] },
-      status: 'vested'
-    });
-
-    const totalTasks = await Credit.countDocuments({
-      userId,
-      type: { $in: ['task_completion', 'ad_watch', 'survey_completion'] }
-    });
-
-    // Calculate streak (consecutive days with activity)
-    let streak = 0;
-    const checkDate = new Date();
-    checkDate.setHours(0, 0, 0, 0);
-
-    for (let i = 0; i < 30; i++) { // Check up to 30 days
-      const dayStart = new Date(checkDate);
-      const dayEnd = new Date(checkDate);
-      dayEnd.setDate(dayEnd.getDate() + 1);
-
-      const hasActivity = await Credit.countDocuments({
-        userId,
-        createdAt: { $gte: dayStart, $lt: dayEnd },
-        amount: { $gt: 0 }
-      });
-
-      if (hasActivity > 0) {
-        streak++;
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else {
-        break;
-      }
-    }
-
-    // Calculate days active (total days with any activity)
-    const daysActiveResult = await Credit.aggregate([
-      {
-        $match: {
-          userId: new require('mongoose').Types.ObjectId(userId),
-          amount: { $gt: 0 }
-        }
-      },
-      {
-        $group: {
-          _id: {
-            year: { $year: '$createdAt' },
-            month: { $month: '$createdAt' },
-            day: { $dayOfMonth: '$createdAt' }
-          }
-        }
-      },
-      { $count: 'totalDays' }
-    ]);
-    const daysActive = daysActiveResult.length > 0 ? daysActiveResult[0].totalDays : 0;
-
-    // Update User model with migrated data
-    user.creditsReady = availableCredits;
-    user.totalEarned = totalCredits; // Total credits earned (available + withdrawn)
-    user.totalWithdrawn = Math.max(0, totalCredits - availableCredits); // Estimate withdrawn
-    user.coinBalance = user.coinBalance || 0; // Keep existing coin balance
-    user.dailyCreditsEarned = dailyCreditsEarned;
-    user.dailyProgress = Math.min((dailyCreditsEarned / user.getDailyCreditLimit()) * 100, 100);
-    user.daysActive = daysActive;
-    user.currentStreak = streak;
-    user.totalTasksAssigned = totalTasks;
-    user.totalTasksCompleted = completedTasks;
-    
-    // Initialize referral stats (will be populated when referrals are processed)
-    user.totalDirectReferrals = user.totalDirectReferrals || 0;
-    user.totalIndirectReferrals = user.totalIndirectReferrals || 0;
-    user.totalDeepReferrals = user.totalDeepReferrals || 0;
-    user.totalReferralEarnings = user.totalReferralEarnings || 0;
-
-    await user.save();
-
-    console.log('✅ User data migrated successfully:', {
-      creditsReady: user.creditsReady,
-      totalEarned: user.totalEarned,
-      daysActive: user.daysActive,
-      currentStreak: user.currentStreak
-    });
+    const { cleanupOldDatabase } = require('../scripts/cleanup-old-database');
+    await cleanupOldDatabase();
 
     res.json({
-      message: 'User data migrated successfully from existing records!',
-      migratedData: {
-        creditsReady: user.creditsReady,
-        totalEarned: user.totalEarned,
-        totalWithdrawn: user.totalWithdrawn,
-        coinBalance: user.coinBalance,
-        dailyCreditsEarned: user.dailyCreditsEarned,
-        dailyProgress: user.dailyProgress,
-        daysActive: user.daysActive,
-        currentStreak: user.currentStreak,
-        totalTasksAssigned: user.totalTasksAssigned,
-        totalTasksCompleted: user.totalTasksCompleted
-      },
-      sourceData: {
-        availableCredits,
-        totalCredits,
-        dailyCreditsEarned,
-        totalCoinsEarned,
-        completedTasks,
-        totalTasks,
-        streak,
-        daysActive
-      }
+      message: 'Database cleanup completed successfully!',
+      note: 'Old trial collections have been removed. System now uses User model exclusively.'
     });
 
   } catch (error) {
-    console.error('❌ Migration error:', error);
+    console.error('❌ Database cleanup error:', error);
     res.status(500).json({ 
-      message: 'Failed to migrate user data',
+      message: 'Failed to cleanup database',
       error: error.message 
     });
   }
 });
 
 // @route   POST /api/stats/seed-test-data
-// @desc    Add test data for user (development only)
+// @desc    Add test data directly to User model (NEW IMPLEMENTATION - no old database)
 // @access  Private
 router.post('/seed-test-data', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    console.log('🌱 Seeding test data for user:', userId);
+    console.log('🌱 Seeding test data for user (NEW IMPLEMENTATION):', userId);
 
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Add some test credits
-    const testCredits = [
-      {
-        userId,
-        amount: 100,
-        type: 'task_completion',
-        source: 'video_ad',
-        description: 'Watched video ad',
-        status: 'vested',
-        isVested: true
-      },
-      {
-        userId,
-        amount: 50,
-        type: 'ad_watch',
-        source: 'propeller_ads',
-        description: 'PropellerAds video reward',
-        status: 'vested',
-        isVested: true
-      },
-      {
-        userId,
-        amount: 25,
-        type: 'daily_bonus',
-        source: 'login_bonus',
-        description: 'Daily login bonus',
-        status: 'vested',
-        isVested: true
-      }
-    ];
-
-    for (const creditData of testCredits) {
-      await Credit.create(creditData);
-    }
-
-    // Add some test coins
-    const testCoins = [
-      {
-        userId,
-        amount: 150,
-        type: 'earned',
-        source: 'app_install',
-        description: 'Instagram app install reward',
-        status: 'completed'
-      },
-      {
-        userId,
-        amount: 100,
-        type: 'earned',
-        source: 'video_ad',
-        description: 'Video ad reward',
-        status: 'completed'
-      }
-    ];
-
-    for (const coinData of testCoins) {
-      await Coin.create(coinData);
-    }
-
-    // Update user stats directly in User model (NEW APPROACH)
+    // Update user stats directly in User model (NO OLD DATABASE DEPENDENCIES)
     user.creditsReady = (user.creditsReady || 0) + 175; // Add test credits
-    user.totalEarned = user.creditsReady + user.totalWithdrawn; // Update total earned
+    user.totalEarned = user.creditsReady + (user.totalWithdrawn || 0); // Update total earned
     user.coinBalance = (user.coinBalance || 0) + 250; // Add test coins
     user.dailyCreditsEarned = 75; // Set some daily progress
-    user.dailyProgress = 75; // Set daily progress percentage
+    user.dailyProgress = Math.min((75 / user.getDailyCreditLimit()) * 100, 100); // Calculate progress percentage
     user.daysActive = (user.daysActive || 0) + 1; // Increment days active
     user.currentStreak = Math.max(user.currentStreak || 0, 1); // Set minimum streak
     user.totalTasksAssigned = (user.totalTasksAssigned || 0) + 5; // Add test tasks
     user.totalTasksCompleted = (user.totalTasksCompleted || 0) + 3; // Add completed tasks
+    
+    // Add some referral stats for testing
+    user.totalDirectReferrals = (user.totalDirectReferrals || 0) + 2;
+    user.totalReferralEarnings = (user.totalReferralEarnings || 0) + 50;
     
     // Update activity tracking
     user.updateActivityStats();
     
     await user.save();
 
+    console.log('✅ Test data seeded successfully (User model only):', {
+      creditsReady: user.creditsReady,
+      totalEarned: user.totalEarned,
+      coinBalance: user.coinBalance,
+      daysActive: user.daysActive,
+      currentStreak: user.currentStreak
+    });
+
     res.json({
-      message: 'Test data seeded successfully - User model updated!',
+      message: 'Test data seeded successfully - User model only (NEW IMPLEMENTATION)!',
       data: {
-        creditsAdded: testCredits.length,
-        coinsAdded: testCoins.length,
-        
-        // New User model stats
+        // User model stats (no old database)
         creditsReady: user.creditsReady,
         totalEarned: user.totalEarned,
         totalWithdrawn: user.totalWithdrawn,
@@ -698,12 +437,15 @@ router.post('/seed-test-data', authenticateToken, async (req, res) => {
         daysActive: user.daysActive,
         currentStreak: user.currentStreak,
         totalTasksAssigned: user.totalTasksAssigned,
-        totalTasksCompleted: user.totalTasksCompleted
-      }
+        totalTasksCompleted: user.totalTasksCompleted,
+        totalDirectReferrals: user.totalDirectReferrals,
+        totalReferralEarnings: user.totalReferralEarnings
+      },
+      note: 'All data stored directly in User model - no old database collections used!'
     });
 
   } catch (error) {
-    console.error('Seed test data error:', error);
+    console.error('❌ Seed test data error:', error);
     res.status(500).json({ 
       message: 'Failed to seed test data',
       error: error.message 

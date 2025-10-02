@@ -262,23 +262,26 @@ export default function DashboardPage() {
     }
   }
 
-  const migrateUserData = async () => {
+  const cleanupDatabase = async () => {
+    if (!confirm('⚠️ This will permanently delete old trial database collections. Are you sure? (Admin only)')) {
+      return
+    }
+    
     try {
-      const response = await apiRequest('api/stats/migrate-user-data', {
+      const response = await apiRequest('api/stats/cleanup-database', {
         method: 'POST',
         headers: getAuthHeaders()
       })
       const data = await response.json()
-      console.log('Migration data:', data)
+      console.log('Cleanup data:', data)
       if (response.ok) {
-        alert('✅ Data migrated successfully! Your existing credits and activity have been transferred to the new stats system. Refresh the page to see updated stats.')
-        fetchDashboardData() // Refresh data
+        alert('✅ Database cleanup completed! Old trial collections have been removed. System now uses User model exclusively.')
       } else {
-        alert('Failed to migrate: ' + data.message)
+        alert('Failed to cleanup: ' + data.message)
       }
     } catch (error) {
-      console.error('Migration error:', error)
-      alert('Error migrating data')
+      console.error('Cleanup error:', error)
+      alert('Error cleaning up database')
     }
   }
 
@@ -470,10 +473,10 @@ export default function DashboardPage() {
                 Check User
               </button>
               <button 
-                onClick={migrateUserData}
+                onClick={cleanupDatabase}
                 className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
               >
-                Migrate Data
+                Cleanup DB
               </button>
               
               {user.vipLevel > 0 && (
