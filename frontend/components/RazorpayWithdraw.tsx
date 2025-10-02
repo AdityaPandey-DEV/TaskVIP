@@ -120,7 +120,7 @@ export default function RazorpayWithdraw() {
         name: 'UPI Payment',
         description: 'Pay using UPI ID - Instant & Secure',
         fee: 1.5,
-        minAmount: 50,
+        minAmount: 10,
         processingTime: '1-2 hours',
         icon: '📱',
         fields: [
@@ -132,7 +132,7 @@ export default function RazorpayWithdraw() {
         name: 'Bank Transfer',
         description: 'Direct transfer to your bank account',
         fee: 2.0,
-        minAmount: 50,
+        minAmount: 10,
         processingTime: '2-4 hours',
         icon: '🏦',
         fields: [
@@ -148,7 +148,7 @@ export default function RazorpayWithdraw() {
         name: 'Digital Wallet',
         description: 'Transfer to Paytm, PhonePe, etc.',
         fee: 3.0,
-        minAmount: 100,
+        minAmount: 20,
         processingTime: '1-2 hours',
         icon: '💳',
         fields: [
@@ -257,7 +257,7 @@ export default function RazorpayWithdraw() {
   }
 
   const getCreditsRequired = () => {
-    return parseFloat(amount) || 0 // 1 credit = ₹1
+    return (parseFloat(amount) || 0) * 10 // 10 credits = ₹1
   }
 
   const validateUPI = (upiId: string) => {
@@ -280,7 +280,7 @@ export default function RazorpayWithdraw() {
     
     const amountNum = parseFloat(amount)
     if (amountNum < selectedMethod.minAmount) return false
-    if (amountNum > userBalance.availableCredits) return false
+    if (amountNum > Math.floor(userBalance.availableCredits / 10)) return false
     
     // Validate required fields
     for (const field of selectedMethod.fields) {
@@ -434,13 +434,13 @@ export default function RazorpayWithdraw() {
               </div>
             ) : (
               <>
-                <div className="text-2xl font-bold">₹{userBalance.availableCredits}</div>
+                <div className="text-2xl font-bold">₹{Math.floor(userBalance.availableCredits / 10)}</div>
                 <div className="text-sm text-green-100">Cash Value</div>
               </>
             )}
           </div>
           <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-2xl font-bold">₹50</div>
+            <div className="text-2xl font-bold">₹10</div>
             <div className="text-sm text-green-100">Minimum Withdrawal</div>
           </div>
         </div>
@@ -548,7 +548,7 @@ export default function RazorpayWithdraw() {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     min={selectedMethod.minAmount}
-                    max={userBalance.availableCredits}
+                    max={Math.floor(userBalance.availableCredits / 10)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder={`Min ₹${selectedMethod.minAmount}`}
                   />
