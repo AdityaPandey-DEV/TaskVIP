@@ -173,6 +173,40 @@ export default function DashboardPage() {
     // You could add a toast notification here
   }
 
+  // Debug functions (temporary)
+  const seedTestData = async () => {
+    try {
+      const response = await apiRequest('api/stats/seed-test-data', {
+        method: 'POST',
+        headers: getAuthHeaders()
+      })
+      const data = await response.json()
+      if (response.ok) {
+        alert('Test data seeded! Refresh the page to see changes.')
+        fetchDashboardData() // Refresh data
+      } else {
+        alert('Failed to seed data: ' + data.message)
+      }
+    } catch (error) {
+      console.error('Seed data error:', error)
+      alert('Error seeding data')
+    }
+  }
+
+  const debugUserData = async () => {
+    try {
+      const response = await apiRequest(`api/stats/debug/${user?.id}`, {
+        headers: getAuthHeaders()
+      })
+      const data = await response.json()
+      console.log('Debug data:', data)
+      alert('Debug data logged to console. Check browser console.')
+    } catch (error) {
+      console.error('Debug error:', error)
+      alert('Error getting debug data')
+    }
+  }
+
   // Show loading screen while checking authentication
   if (loading) {
     return (
@@ -335,6 +369,20 @@ export default function DashboardPage() {
               <p className="text-slate-600">Here's what's happening with your account today.</p>
             </div>
             <div className="flex items-center space-x-4">
+              {/* Debug buttons (temporary) */}
+              <button 
+                onClick={seedTestData}
+                className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+              >
+                Seed Data
+              </button>
+              <button 
+                onClick={debugUserData}
+                className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+              >
+                Debug
+              </button>
+              
               {user.vipLevel > 0 && (
                 <div className="flex items-center space-x-2 px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full">
                   <Crown className="w-4 h-4 text-white" />
