@@ -95,7 +95,22 @@ export default function DashboardPage() {
       })
       if (statsResponse.ok) {
         const statsData = await statsResponse.json()
-        setStats(statsData)
+        // Transform the API response to match the expected interface
+        const transformedStats = {
+          availableCredits: statsData.availableCredits || 0,
+          totalCredits: statsData.totalCredits || 0,
+          dailyCreditsEarned: statsData.user?.dailyCreditsEarned || 0,
+          dailyCreditLimit: statsData.user?.dailyCreditLimit || 0,
+          streak: 0, // Not available from this endpoint
+          totalTasks: 0, // Not available from this endpoint
+          completedTasks: 0, // Not available from this endpoint
+          referralStats: {
+            totalReferrals: 0, // Not available from this endpoint
+            totalEarnings: 0, // Not available from this endpoint
+            activeReferrals: 0 // Not available from this endpoint
+          }
+        }
+        setStats(transformedStats)
       } else {
         console.error('Failed to fetch stats:', statsResponse.status)
       }
@@ -452,11 +467,11 @@ export default function DashboardPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-3 lg:gap-4 text-center">
                     <div>
-                      <p className="text-xl lg:text-2xl font-bold">{stats?.referralStats.totalReferrals || 0}</p>
+                      <p className="text-xl lg:text-2xl font-bold">{stats?.referralStats?.totalReferrals || 0}</p>
                       <p className="text-xs text-blue-100">Total Referrals</p>
                     </div>
                     <div>
-                      <p className="text-xl lg:text-2xl font-bold">{stats?.referralStats.totalEarnings || 0}</p>
+                      <p className="text-xl lg:text-2xl font-bold">{stats?.referralStats?.totalEarnings || 0}</p>
                       <p className="text-xs text-blue-100">Bonus Earned</p>
                     </div>
                   </div>
