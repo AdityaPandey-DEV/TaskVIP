@@ -19,11 +19,11 @@
     }
   ],
   "env": {
-    "NEXT_PUBLIC_API_URL": "https://taskvip.onrender.com/api"
+    "NEXT_PUBLIC_API_URL": "https://taskvip.onrender.com"
   },
   "build": {
     "env": {
-      "NEXT_PUBLIC_API_URL": "https://taskvip.onrender.com/api"
+      "NEXT_PUBLIC_API_URL": "https://taskvip.onrender.com"
     }
   }
 }

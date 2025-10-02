@@ -13,7 +13,7 @@ export function getApiUrl(endpoint: string): string {
   
   // Always use Render backend for Vercel deployment
   if (isVercel) {
-    return `https://taskvip.onrender.com/api/${cleanEndpoint}`;
+    return `https://taskvip.onrender.com/${cleanEndpoint}`;
   }
   
   // For localhost development, check if we want to use local or remote backend
@@ -21,13 +21,13 @@ export function getApiUrl(endpoint: string): string {
     // Use environment variable to decide between local and remote backend
     const useRemoteBackend = process.env.NEXT_PUBLIC_USE_REMOTE_BACKEND === 'true';
     if (useRemoteBackend) {
-      return `https://taskvip.onrender.com/api/${cleanEndpoint}`;
+      return `https://taskvip.onrender.com/${cleanEndpoint}`;
     }
     return `/${cleanEndpoint}`; // Use rewrites for local backend
   }
   
-  // Fallback: use the configured backend URL or Render
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://taskvip.onrender.com/api';
+  // Fallback: use the configured backend URL or Render  
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://taskvip.onrender.com';
   return `${baseUrl}/${cleanEndpoint}`;
 }
 
