@@ -9,7 +9,7 @@ const razorpayWithdrawalSchema = new mongoose.Schema({
   amount: {
     type: Number,
     required: true,
-    min: 100 // Minimum ₹100 withdrawal
+    min: 10 // Minimum ₹10 withdrawal
   },
   coinAmount: {
     type: Number,
@@ -27,7 +27,8 @@ const razorpayWithdrawalSchema = new mongoose.Schema({
   },
   netAmount: {
     type: Number,
-    required: true
+    required: false, // Will be calculated in pre-save middleware
+    default: 0
   },
   withdrawalMethod: {
     type: String,
@@ -124,7 +125,7 @@ razorpayWithdrawalSchema.index({ verificationStatus: 1 });
 
 // Pre-save middleware to calculate processing fee and net amount
 razorpayWithdrawalSchema.pre('save', function(next) {
-  if (this.isNew) {
+  if (this.isNew || this.isModified('amount') || this.isModified('withdrawalMethod')) {
     // Calculate processing fee based on method
     const feePercentages = {
       bank_transfer: 2.5,
