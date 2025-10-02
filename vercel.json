@@ -3,20 +3,22 @@
   "builds": [
     {
       "src": "frontend/package.json",
-      "use": "@vercel/next"
+      "use": "@vercel/next",
+      "config": {
+        "distDir": ".next"
+      }
     }
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "https://your-backend-url.com/api/$1"
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
-      "dest": "/frontend/$1"
+      "dest": "frontend/$1"
     }
   ],
   "env": {
-    "NEXT_PUBLIC_API_URL": "https://your-backend-url.com/api"
+    "NEXT_PUBLIC_API_URL": "https://taskvip.onrender.com/api"
   }
 }

@@ -1,0 +1,12 @@
+{
+  "framework": "nextjs",
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://taskvip.onrender.com/api"
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://taskvip.onrender.com/api/:path*"
+    }
+  ]
+}
