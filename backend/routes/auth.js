@@ -502,6 +502,9 @@ router.post('/google/complete', [
     const { googleUserData, referralCode } = req.body;
     const { email, firstName, lastName, picture } = googleUserData;
 
+    // Ensure lastName has a value (Google might not provide it)
+    const userLastName = lastName || '';
+
     // Use default referral code "0000" if none provided
     const finalReferralCode = referralCode || '0000';
 
@@ -525,10 +528,10 @@ router.post('/google/complete', [
     const newUser = new User({
       email: email.toLowerCase(),
       firstName,
-      lastName,
+      lastName: userLastName,
       password: 'google-oauth', // Placeholder password for Google users
-      isEmailVerified: true, // Google emails are pre-verified
-      profilePicture: picture,
+      emailVerified: true, // Google emails are pre-verified
+      
       deviceInfo: {
         ip: req.ip,
         userAgent: req.get('User-Agent'),
