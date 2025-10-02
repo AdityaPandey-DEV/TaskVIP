@@ -143,6 +143,16 @@ export function RewardSystem() {
   const completeTask = async (taskId: string) => {
     if (completingTask) return
     
+    const task = tasks.find(t => t.id === taskId)
+    if (!task) return
+
+    // Handle AdMob video tasks differently
+    if (task.type === 'admob_video') {
+      await handleAdMobVideo(taskId)
+      return
+    }
+    
+    // Handle other tasks normally
     setCompletingTask(taskId)
     try {
       const response = await apiRequest(`api/rewards/complete/${taskId}`, {
@@ -169,6 +179,179 @@ export function RewardSystem() {
     } finally {
       setCompletingTask(null)
     }
+  }
+
+  const handleAdMobVideo = async (taskId: string) => {
+    setCompletingTask(taskId)
+    
+    try {
+      // Check if AdMob is available (in a real implementation)
+      if (typeof window !== 'undefined' && (window as any).adsbygoogle) {
+        // This would be the real AdMob integration
+        toast('Loading video ad...', { icon: '📺' })
+        
+        // Simulate video ad loading and completion
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+        // Show a mock video dialog
+        const watchVideo = await showMockVideoDialog()
+        
+        if (watchVideo) {
+          // Award coins after video completion
+          const response = await apiRequest(`api/rewards/complete/${taskId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...getAuthHeaders()
+            }
+          })
+          
+          if (response.ok) {
+            const data = await response.json()
+            toast.success(`Video completed! You earned ${data.coinsEarned || 5} coins!`)
+            fetchRewardTasks()
+            fetchUserCoins()
+          } else {
+            const error = await response.json()
+            toast.error(error.message || 'Failed to award coins')
+          }
+        } else {
+          toast.error('Video was not completed')
+        }
+      } else {
+        // Fallback: Direct reward without video (current behavior)
+        toast('AdMob not loaded, awarding coins directly...', { icon: '⚡' })
+        
+        const response = await apiRequest(`api/rewards/complete/${taskId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders()
+          }
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          toast.success(`Task completed! You earned ${data.coinsEarned || 5} coins!`)
+          fetchRewardTasks()
+          fetchUserCoins()
+        } else {
+          const error = await response.json()
+          toast.error(error.message || 'Failed to complete task')
+        }
+      }
+    } catch (error) {
+      console.error('Error with AdMob video:', error)
+      toast.error('Failed to load video ad. Please try again.')
+    } finally {
+      setCompletingTask(null)
+    }
+  }
+
+  const showMockVideoDialog = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const dialog = document.createElement('div')
+      dialog.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+      `
+      
+      dialog.innerHTML = `
+        <div style="
+          background: white;
+          padding: 20px;
+          border-radius: 10px;
+          text-align: center;
+          max-width: 400px;
+          margin: 20px;
+        ">
+          <h3 style="margin-bottom: 15px; color: #333;">🎬 Rewarded Video Ad</h3>
+          <div style="
+            width: 300px;
+            height: 200px;
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            margin: 15px auto;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+          ">
+            📺 Video Playing...
+          </div>
+          <div style="margin: 15px 0;">
+            <div id="countdown" style="font-size: 16px; color: #666;">Watch for 15 seconds to earn coins!</div>
+          </div>
+          <button id="closeBtn" style="
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+          ">Close (No Reward)</button>
+          <button id="completeBtn" style="
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            opacity: 0.5;
+            cursor: not-allowed;
+          " disabled>Complete (0s)</button>
+        </div>
+      `
+      
+      document.body.appendChild(dialog)
+      
+      const closeBtn = dialog.querySelector('#closeBtn')
+      const completeBtn = dialog.querySelector('#completeBtn') as HTMLButtonElement
+      const countdown = dialog.querySelector('#countdown')
+      
+      let timeLeft = 15
+      const timer = setInterval(() => {
+        timeLeft--
+        if (countdown) countdown.textContent = `Watch for ${timeLeft} seconds to earn coins!`
+        if (completeBtn) completeBtn.textContent = `Complete (${15-timeLeft}s)`
+        
+        if (timeLeft <= 0) {
+          clearInterval(timer)
+          if (completeBtn) {
+            completeBtn.disabled = false
+            completeBtn.style.opacity = '1'
+            completeBtn.style.cursor = 'pointer'
+            completeBtn.textContent = 'Claim Reward! 🎉'
+          }
+          if (countdown) countdown.textContent = 'Video completed! Click to claim your reward.'
+        }
+      }, 1000)
+      
+      closeBtn?.addEventListener('click', () => {
+        clearInterval(timer)
+        document.body.removeChild(dialog)
+        resolve(false)
+      })
+      
+      completeBtn?.addEventListener('click', () => {
+        if (!completeBtn.disabled) {
+          clearInterval(timer)
+          document.body.removeChild(dialog)
+          resolve(true)
+        }
+      })
+    })
   }
 
   const getTaskIcon = (type: RewardTask['type']) => {
