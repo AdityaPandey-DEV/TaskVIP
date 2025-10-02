@@ -505,23 +505,11 @@ router.post('/google/complete', [
     // Use default referral code "0000" if none provided
     const finalReferralCode = referralCode || '0000';
 
-    console.log(`Google OAuth: Validating referral code: ${finalReferralCode}`);
-
-    // Ensure default user exists before validation
-    if (finalReferralCode === '0000') {
-      const User = require('../models/User');
-      await User.ensureDefaultReferralUser();
-      console.log('Default referral user ensured for Google OAuth');
-    }
-
     // Validate referral code (pass null for referredUserId since user doesn't exist yet)
     const isValidReferral = await Referral.isValidReferral(finalReferralCode, null);
-    console.log(`Referral code ${finalReferralCode} validation result: ${isValidReferral}`);
-    
     if (!isValidReferral) {
-      console.error(`Invalid referral code: ${finalReferralCode}`);
       return res.status(400).json({ 
-        message: `Invalid referral code: ${finalReferralCode}. Please check the code and try again.` 
+        message: 'Invalid referral code. Please check the code and try again.' 
       });
     }
 

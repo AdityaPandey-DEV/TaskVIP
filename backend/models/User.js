@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema({
   referralCode: {
     type: String,
     unique: true,
-    required: true
+    required: false // Generated automatically in pre-save hook
   },
   referredBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -164,7 +164,7 @@ userSchema.pre('save', async function(next) {
 
 // Generate referral code based on email
 userSchema.pre('save', function(next) {
-  if (this.isNew && !this.referralCode) {
+  if (!this.referralCode) {
     // Generate referral code from email
     const emailHash = require('crypto').createHash('md5').update(this.email).digest('hex');
     this.referralCode = emailHash.slice(0, 8).toUpperCase();
