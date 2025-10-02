@@ -13,18 +13,24 @@ export const admobConfig = {
   testMode: process.env.NODE_ENV === 'development'
 };
 
+// Track if AdMob has been initialized to prevent duplicate calls
+let admobInitialized = false;
+
 export const initializeAdMob = () => {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && !admobInitialized) {
     // Initialize adsbygoogle array if it doesn't exist
     window.adsbygoogle = window.adsbygoogle || [];
     
-    // Push AdMob configuration
+    // Push AdMob configuration only once
     window.adsbygoogle.push({
       google_ad_client: admobConfig.appId,
       enable_page_level_ads: true
     });
     
+    admobInitialized = true;
     console.log('🎬 AdMob initialized with App ID:', admobConfig.appId);
+  } else if (admobInitialized) {
+    console.log('🎬 AdMob already initialized, skipping...');
   }
 };
 

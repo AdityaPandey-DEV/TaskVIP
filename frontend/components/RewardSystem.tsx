@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import Cookies from 'js-cookie'
 import { apiRequest } from '@/lib/api'
-import { initializeAdMob, showRewardedAd } from '@/lib/admob'
+import { showRewardedAd } from '@/lib/admob'
 import { PlayCircle, DollarSign, Gift, CheckCircle, Loader2, Clock, Zap, Repeat } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
@@ -59,8 +59,7 @@ export function RewardSystem() {
     if (user) {
       fetchRewardTasks()
       fetchUserCoins()
-      // Initialize AdMob when component mounts
-      initializeAdMob()
+      // AdMob is now initialized globally in layout
     }
   }, [user])
 
