@@ -16,14 +16,8 @@ export function BannerAd({ zone = "175243", className = "", minViewTime = 3000, 
     // Only load ads for authenticated users
     if (!user || loading) return
 
-    // Reload ads when component mounts
-    if (typeof window !== 'undefined' && (window as any).adsbygoogle) {
-      try {
-        ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({})
-      } catch (e) {
-        console.log('Ad loading...')
-      }
-    }
+    // Ad script is loaded conditionally by AuthenticatedAdScript component
+    // No need to manually load ads here - they will load automatically when script is present
 
     // Track viewing time for optimal earnings
     const adElement = document.getElementById(`ad-zone-${zone}`)

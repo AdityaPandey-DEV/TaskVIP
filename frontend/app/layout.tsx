@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { Toaster } from 'react-hot-toast'
+import { AuthenticatedAdScript } from '@/components/AuthenticatedAdScript'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -43,16 +44,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <script 
-          src="https://fpyf8.com/88/tag.min.js" 
-          data-zone="175243" 
-          async 
-          data-cfasync="false"
-        />
-      </head>
       <body className={inter.className}>
         <AuthProvider>
+          <AuthenticatedAdScript />
           {children}
           <Toaster
             position="top-right"
