@@ -50,10 +50,27 @@ console.log('💳 Payment Gateway (Optional):');
 console.log(`RAZORPAY_KEY_ID=rzp_test_your_key_id`);
 console.log(`RAZORPAY_KEY_SECRET=your_razorpay_secret\n`);
 
-// Ad networks template
-console.log('📺 Ad Networks (Optional):');
-console.log(`PROPELLERADS_API_KEY=your-propellerads-key`);
-console.log(`ADSTERRA_API_KEY=your-adsterra-key\n`);
+// Google OAuth (Recommended)
+console.log('🔐 Google OAuth (Recommended):');
+console.log(`GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com\n`);
+
+// Hybrid Reward System (Monetization)
+console.log('🎯 Hybrid Reward System (Monetization):');
+console.log(`# CPALead - High-value offers`);
+console.log(`CPALEAD_API_KEY=your-cpalead-api-key`);
+console.log(`CPALEAD_SUBID=your-cpalead-subid`);
+console.log(`# AdGate Media - Surveys and offers`);
+console.log(`ADGATE_API_KEY=your-adgate-api-key`);
+console.log(`ADGATE_WALL_ID=your-adgate-wall-id`);
+console.log(`# Google AdMob - Premium video ads`);
+console.log(`ADMOB_APP_ID=ca-app-pub-your-admob-app-id`);
+console.log(`ADMOB_PUBLISHER_ID=pub-your-admob-publisher-id`);
+console.log(`# Unity Ads - Alternative video network`);
+console.log(`UNITY_GAME_ID=your-unity-game-id`);
+console.log(`UNITY_API_KEY=your-unity-api-key`);
+console.log(`# Adscend Media - Additional offers`);
+console.log(`ADSCEND_API_KEY=your-adscend-api-key`);
+console.log(`ADSCEND_PUB_ID=your-adscend-publisher-id\n`);
 
 console.log('📋 Instructions:');
 console.log('1. Copy the values above');
@@ -67,13 +84,15 @@ console.log('- ADMIN_PASSWORD: Generated randomly (change if needed)');
 console.log('- EMAIL_PASS: Use Gmail App Password, not regular password');
 console.log('- MONGODB_URI: Replace with your actual MongoDB connection string');
 console.log('');
-console.log('✅ Your TaskVIP backend will be fully configured once these are set!');
+console.log('✅ Your TaskVIP hybrid reward system will be fully configured once these are set!');
+console.log('🎯 Monetization ready: AdMob + CPALead + AdGate for maximum profitability!');
 console.log('');
 console.log('🎨 Frontend Environment Variables (for deployment):');
 console.log('==================================================');
 console.log('');
 console.log('📁 Create .env.local in frontend directory:');
 console.log(`NEXT_PUBLIC_API_URL=https://taskvip.onrender.com/api`);
+console.log(`NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com`);
 console.log('');
 console.log('📋 Frontend Deployment Instructions:');
 console.log('1. Deploy frontend to Vercel/Netlify');

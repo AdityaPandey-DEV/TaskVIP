@@ -13,9 +13,12 @@ Your TaskVIP backend needs these API keys for full functionality:
 ### **🟡 Important (Required for payments):**
 - **Razorpay** - Payment processing (India)
 
-### **🟢 Optional (For monetization):**
-- **PropellerAds** - Ad network
-- **Adsterra** - Ad network
+### **🟢 Monetization (Hybrid Reward System):**
+- **CPALead** - High-value offer wall (cash payouts)
+- **AdGate Media** - Survey and offer network
+- **AdMob** - Premium video ads (Google)
+- **Unity Ads** - Alternative video ad network
+- **Adscend Media** - Additional offer network
 
 ---
 
@@ -206,43 +209,150 @@ RAZORPAY_KEY_SECRET=your_secret_key_here
 
 ---
 
-## 📺 **5. PropellerAds (Optional - Ad Network)**
+## 🎯 **5. CPALead (High-Value Offers)**
 
-### **Step 1: Create Account**
-1. Go to: https://propellerads.com
-2. Click **"Advertiser Sign Up"** or **"Publisher Sign Up"**
-3. Complete registration
-4. Verify email and phone
+### **Step 1: Create Publisher Account**
+1. Go to: https://cpalead.com
+2. Click **"Publisher Sign Up"**
+3. Complete application (approval required)
+4. Provide website details: TaskVIP app
+5. Wait for approval (1-3 days)
 
-### **Step 2: Get API Key**
-1. Login to dashboard
+### **Step 2: Get API Credentials**
+1. Login to publisher dashboard
 2. Go to **"Tools"** → **"API"**
-3. Generate API key
-4. Copy the key
+3. Generate API key and get your SubID
+4. Copy both values
 
 ```env
-PROPELLERADS_API_KEY=your-propellerads-api-key
+CPALEAD_API_KEY=your-cpalead-api-key
+CPALEAD_SUBID=your-cpalead-subid
+```
+
+### **Step 3: Setup Offer Wall**
+1. Go to **"Tools"** → **"Content Lockers"**
+2. Create new **"Offer Wall"**
+3. Configure for mobile/web
+4. Get wall URL and integration code
+
+---
+
+## 📋 **6. AdGate Media (Surveys & Offers)**
+
+### **Step 1: Publisher Registration**
+1. Go to: https://adgatemedia.com
+2. Click **"Publishers"** → **"Sign Up"**
+3. Complete detailed application
+4. Provide app/website information
+5. Wait for approval (2-5 days)
+
+### **Step 2: Get API Access**
+1. Login to publisher portal
+2. Go to **"API"** section
+3. Generate API key
+4. Get your Wall ID
+
+```env
+ADGATE_API_KEY=your-adgate-api-key
+ADGATE_WALL_ID=your-adgate-wall-id
+```
+
+### **Step 3: Configure Offer Wall**
+1. Go to **"Offer Walls"**
+2. Create new wall for your app
+3. Configure reward settings
+4. Set up postback URL for rewards
+
+---
+
+## 📱 **7. Google AdMob (Premium Video Ads)**
+
+### **Step 1: Create AdMob Account**
+1. Go to: https://admob.google.com
+2. Sign in with Google account
+3. Click **"Get Started"**
+4. Add your app information
+
+### **Step 2: Create App**
+1. Click **"Apps"** → **"Add App"**
+2. Choose **"No, it's not listed on a supported app store"**
+3. Enter app name: **"TaskVIP"**
+4. Select platform: **Android/iOS**
+5. Click **"Add"**
+
+### **Step 3: Create Ad Units**
+1. Go to **"Ad Units"**
+2. Click **"Add Ad Unit"**
+3. Select **"Rewarded"** ad format
+4. Name: **"TaskVIP Reward Video"**
+5. Copy the Ad Unit ID
+
+```env
+ADMOB_APP_ID=ca-app-pub-1234567890123456~1234567890
+ADMOB_PUBLISHER_ID=pub-1234567890123456
+```
+
+### **Step 4: Setup Payments**
+1. Go to **"Payments"**
+2. Add payment method (bank/PayPal)
+3. Set minimum payout threshold
+4. Complete tax information
+
+---
+
+## 🎮 **8. Unity Ads (Alternative Video Network)**
+
+### **Step 1: Create Unity Account**
+1. Go to: https://unity.com/products/unity-ads
+2. Click **"Get Started"**
+3. Sign up with email or Google
+4. Complete developer profile
+
+### **Step 2: Create Project**
+1. Go to Unity Dashboard
+2. Click **"Create Project"**
+3. Enter project name: **"TaskVIP"**
+4. Select **"Mobile"** platform
+5. Get Game ID
+
+### **Step 3: Configure Monetization**
+1. Go to **"Monetization"**
+2. Enable **"Unity Ads"**
+3. Create **"Rewarded Video"** placement
+4. Get API key from settings
+
+```env
+UNITY_GAME_ID=1234567
+UNITY_API_KEY=your-unity-api-key
 ```
 
 ---
 
-## 📺 **6. Adsterra (Optional - Ad Network)**
+## 🌟 **9. Adscend Media (Additional Offers)**
 
-### **Step 1: Create Account**
-1. Go to: https://adsterra.com
-2. Click **"Sign Up"**
-3. Choose **"Publisher"** or **"Advertiser"**
-4. Complete registration
+### **Step 1: Publisher Registration**
+1. Go to: https://adscendmedia.com
+2. Click **"Publishers"** → **"Apply Now"**
+3. Complete detailed application
+4. Provide traffic source details
+5. Wait for approval (3-7 days)
 
-### **Step 2: Get API Key**
-1. Login to dashboard
-2. Go to **"API"** section
-3. Generate API credentials
-4. Copy API key
+### **Step 2: Get API Credentials**
+1. Login to publisher dashboard
+2. Go to **"API"** → **"Documentation"**
+3. Generate API key
+4. Get your Publisher ID
 
 ```env
-ADSTERRA_API_KEY=your-adsterra-api-key
+ADSCEND_API_KEY=your-adscend-api-key
+ADSCEND_PUB_ID=your-adscend-publisher-id
 ```
+
+### **Step 3: Setup Offer Integration**
+1. Go to **"Offer Walls"**
+2. Create new wall configuration
+3. Set up postback URLs for rewards
+4. Configure payout settings
 
 ---
 
@@ -280,9 +390,20 @@ ADMIN_PASSWORD=your-admin-password
 RAZORPAY_KEY_ID=rzp_test_your_key_id
 RAZORPAY_KEY_SECRET=your_razorpay_secret
 
-# Ad Networks (Optional)
-PROPELLERADS_API_KEY=your-propellerads-key
-ADSTERRA_API_KEY=your-adsterra-key
+# Google OAuth (Recommended)
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+
+# Hybrid Reward System (Monetization)
+CPALEAD_API_KEY=your-cpalead-api-key
+CPALEAD_SUBID=your-cpalead-subid
+ADGATE_API_KEY=your-adgate-api-key
+ADGATE_WALL_ID=your-adgate-wall-id
+ADMOB_APP_ID=ca-app-pub-your-admob-app-id
+ADMOB_PUBLISHER_ID=pub-your-admob-publisher-id
+UNITY_GAME_ID=your-unity-game-id
+UNITY_API_KEY=your-unity-api-key
+ADSCEND_API_KEY=your-adscend-api-key
+ADSCEND_PUB_ID=your-adscend-publisher-id
 ```
 
 ### **Step 3: Save and Redeploy**
@@ -364,14 +485,49 @@ npm run setup-frontend-prod
 
 ---
 
-## 📞 **Support Links**
+## 🎯 **Priority Setup Order**
 
-- **MongoDB Atlas:** https://docs.atlas.mongodb.com/
-- **Razorpay:** https://razorpay.com/docs/
-- **Gmail SMTP:** https://support.google.com/accounts/answer/185833
-- **PropellerAds:** https://propellerads.com/blog/
-- **Adsterra:** https://adsterra.com/blog/
+### **Phase 1: Core Functionality (Required)**
+1. 🔴 **MongoDB Atlas** - Database (critical)
+2. 🔴 **JWT Secret** - Authentication (critical)
+3. 🔴 **Gmail SMTP** - Email verification (critical)
+4. 🟡 **Google OAuth** - Social login (recommended)
+
+### **Phase 2: Monetization (Launch)**
+5. 🟢 **CPALead** - High-value offers (start here)
+6. 🟢 **AdMob** - Premium video ads (stable revenue)
+7. 🟡 **Razorpay** - VIP payments (India)
+
+### **Phase 3: Scale (Growth)**
+8. 🟢 **AdGate Media** - Additional offers
+9. 🟢 **Unity Ads** - Alternative video network
+10. 🟢 **Adscend Media** - More offer variety
 
 ---
 
-**🎉 Once you have these API keys configured, your TaskVIP platform will be fully operational with database, authentication, email verification, and payment processing!**
+## 📞 **Support Links**
+
+### **Core Services:**
+- **MongoDB Atlas:** https://docs.atlas.mongodb.com/
+- **Google OAuth:** https://developers.google.com/identity/protocols/oauth2
+- **Gmail SMTP:** https://support.google.com/accounts/answer/185833
+- **Razorpay:** https://razorpay.com/docs/
+
+### **Monetization Networks:**
+- **CPALead:** https://cpalead.com/help/
+- **AdGate Media:** https://adgatemedia.com/support/
+- **Google AdMob:** https://support.google.com/admob/
+- **Unity Ads:** https://docs.unity.com/ads/
+- **Adscend Media:** https://adscendmedia.com/support/
+
+---
+
+**🎉 Once you have these API keys configured, your TaskVIP platform will be fully operational with:**
+
+✅ **Core Features:** Database, authentication, email verification  
+✅ **Hybrid Reward System:** AdMob + CPALead + AdGate for maximum profitability  
+✅ **VIP Tiers:** Bronze/Silver/Gold with 1.2x-2.0x multipliers  
+✅ **Cash Payouts:** Real money withdrawals via Paytm/UPI/PayPal  
+✅ **Fraud Protection:** Daily limits, IP tracking, manual approval  
+
+**Ready to launch your profitable reward app!** 🚀
