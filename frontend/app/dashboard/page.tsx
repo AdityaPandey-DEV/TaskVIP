@@ -94,74 +94,41 @@ export default function DashboardPage() {
       setLoadingStats(true)
       setLoadingTasks(true)
 
-      // Fetch comprehensive dashboard stats
+      // Simple: Get stats from database
       const statsResponse = await apiRequest('api/stats/dashboard', {
         headers: getAuthHeaders()
       })
+      
       if (statsResponse.ok) {
-        const statsData = await statsResponse.json()
-        // Use the comprehensive stats directly
-        const transformedStats = {
-          availableCredits: statsData.availableCredits || 0,
-          totalCredits: statsData.totalCredits || 0,
-          dailyCreditsEarned: statsData.dailyCreditsEarned || 0,
-          dailyCreditLimit: statsData.dailyCreditLimit || 0,
-          dailyProgress: statsData.dailyProgress || 0,
-          streak: statsData.streak || 0,
-          totalTasks: statsData.totalTasks || 0,
-          completedTasks: statsData.completedTasks || 0,
-          coinBalance: statsData.coinBalance || 0,
-          totalCoinsEarned: statsData.totalCoinsEarned || 0,
-          referralStats: {
-            totalReferrals: statsData.referralStats?.totalReferrals || 0,
-            totalEarnings: statsData.referralStats?.totalEarnings || 0,
-            activeReferrals: statsData.referralStats?.activeReferrals || 0
-          }
-        }
-        setStats(transformedStats)
-      } else {
-        console.error('Failed to fetch stats:', statsResponse.status)
-        // Fallback to old endpoint if new one fails
-        const fallbackResponse = await apiRequest('api/credits/balance', {
-          headers: getAuthHeaders()
+        const data = await statsResponse.json()
+        setStats({
+          availableCredits: data.availableCredits,
+          totalCredits: data.totalCredits,
+          dailyCreditsEarned: data.dailyCreditsEarned,
+          dailyCreditLimit: data.dailyCreditLimit,
+          dailyProgress: data.dailyProgress,
+          streak: data.streak,
+          totalTasks: data.totalTasks,
+          completedTasks: data.completedTasks,
+          coinBalance: data.coinBalance,
+          totalCoinsEarned: 0, // Not used anymore
+          referralStats: data.referralStats
         })
-        if (fallbackResponse.ok) {
-          const fallbackData = await fallbackResponse.json()
-          const fallbackStats = {
-            availableCredits: fallbackData.availableCredits || 0,
-            totalCredits: fallbackData.totalCredits || 0,
-            dailyCreditsEarned: fallbackData.user?.dailyCreditsEarned || 0,
-            dailyCreditLimit: fallbackData.user?.dailyCreditLimit || 0,
-            dailyProgress: 0,
-            streak: 0,
-            totalTasks: 0,
-            completedTasks: 0,
-            coinBalance: 0,
-            totalCoinsEarned: 0,
-            referralStats: {
-              totalReferrals: 0,
-              totalEarnings: 0,
-              activeReferrals: 0
-            }
-          }
-          setStats(fallbackStats)
-        }
       }
       setLoadingStats(false)
 
-      // Fetch daily tasks
+      // Get tasks
       const tasksResponse = await apiRequest('api/tasks/daily', {
         headers: getAuthHeaders()
       })
       if (tasksResponse.ok) {
         const tasksData = await tasksResponse.json()
         setTasks(tasksData.tasks || [])
-      } else {
-        console.error('Failed to fetch tasks:', tasksResponse.status)
       }
       setLoadingTasks(false)
+      
     } catch (error) {
-      console.error('Error fetching dashboard data:', error)
+      console.error('Error:', error)
       setLoadingStats(false)
       setLoadingTasks(false)
     }
@@ -282,6 +249,58 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Cleanup error:', error)
       alert('Error cleaning up database')
+    }
+  }
+
+  const debugCurrentUser = async () => {
+    try {
+      const response = await apiRequest('api/stats/debug-current-user', {
+        headers: getAuthHeaders()
+      })
+      const data = await response.json()
+      console.log('🔍 Current User Debug:', data)
+      
+      if (response.ok) {
+        const fieldStatus = data.fieldStatus
+        const rawFields = data.rawUserFields
+        
+        alert(`🔍 User Debug Results:
+        
+📊 Field Status:
+- creditsReady: ${fieldStatus.creditsReadyValue} (${fieldStatus.hasCreditsReady ? 'exists' : 'missing'})
+- oldCredits: ${fieldStatus.oldCreditsValue} (${fieldStatus.hasOldCredits ? 'exists' : 'missing'})
+- coinBalance: ${fieldStatus.coinBalanceValue}
+
+💡 Issue: ${!fieldStatus.hasCreditsReady ? 'creditsReady field is missing/null!' : 'creditsReady field exists'}
+
+Check console for full details.`)
+      } else {
+        alert('Failed to debug user: ' + data.message)
+      }
+    } catch (error) {
+      console.error('Debug current user error:', error)
+      alert('Error debugging current user')
+    }
+  }
+
+  const populateFromOldFields = async () => {
+    try {
+      const response = await apiRequest('api/stats/populate-from-old-fields', {
+        method: 'POST',
+        headers: getAuthHeaders()
+      })
+      const data = await response.json()
+      console.log('🔄 Populate from old fields:', data)
+      
+      if (response.ok) {
+        alert('✅ Stats populated from old fields! Your existing credits have been transferred to the new stats system. Refresh the page to see updated stats.')
+        fetchDashboardData() // Refresh data
+      } else {
+        alert('Failed to populate: ' + data.message)
+      }
+    } catch (error) {
+      console.error('Populate from old fields error:', error)
+      alert('Error populating from old fields')
     }
   }
 
@@ -477,6 +496,12 @@ export default function DashboardPage() {
                 className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
               >
                 Cleanup DB
+              </button>
+              <button 
+                onClick={debugCurrentUser}
+                className="px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700"
+              >
+                Debug User
               </button>
               
               {user.vipLevel > 0 && (

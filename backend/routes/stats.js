@@ -150,75 +150,56 @@ router.get('/recent-activity', async (req, res) => {
 });
 
 // @route   GET /api/stats/dashboard
-// @desc    Get user's comprehensive dashboard statistics (User model only - NEW IMPLEMENTATION)
+// @desc    Get user's dashboard statistics - SIMPLE AND DIRECT
 // @access  Private
 router.get('/dashboard', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.id;
-    console.log('📊 Dashboard stats requested for user (NEW IMPLEMENTATION):', userId);
-    
-    const user = await User.findById(userId);
-
+    const user = await User.findById(req.user.id);
     if (!user) {
-      console.log('❌ User not found:', userId);
       return res.status(404).json({ message: 'User not found' });
     }
 
-    console.log('✅ User found:', user.email, 'Using User model stats only');
-
-    // Get comprehensive stats directly from user model (FAST!)
-    const stats = user.getDashboardStats();
+    // If new stats fields are empty, populate them from old fields
+    if (!user.creditsReady && user.availableCredits) {
+      user.creditsReady = user.availableCredits;
+    }
+    if (!user.totalEarned && user.totalCredits) {
+      user.totalEarned = user.totalCredits;
+    }
+    if (!user.daysActive) {
+      user.daysActive = 1;
+    }
+    if (!user.currentStreak) {
+      user.currentStreak = 1;
+    }
     
-    console.log('📊 Stats from User model:', {
-      creditsReady: stats.creditsReady,
-      totalEarned: stats.totalEarned,
-      dailyProgress: stats.dailyProgress,
-      currentStreak: stats.currentStreak
-    });
+    // Save if we updated anything
+    if (!user.creditsReady || !user.totalEarned || !user.daysActive || !user.currentStreak) {
+      await user.save();
+    }
 
+    // Return simple stats directly from user
     res.json({
-      // Financial Stats (directly from User model)
-      availableCredits: Math.round(stats.creditsReady),
-      creditsReady: Math.round(stats.creditsReady),
-      totalCredits: Math.round(stats.totalEarned), // Total earned
-      totalEarned: Math.round(stats.totalEarned),
-      totalWithdrawn: Math.round(stats.totalWithdrawn),
-      coinBalance: Math.round(stats.coinBalance),
-
-      // Daily Stats (directly from User model)
-      dailyCreditsEarned: Math.round(stats.dailyCreditsEarned),
-      dailyCreditLimit: Math.round(stats.dailyCreditLimit),
-      dailyProgress: Math.round(stats.dailyProgress),
-
-      // Activity Stats (directly from User model)
-      streak: stats.currentStreak,
-      currentStreak: stats.currentStreak,
-      daysActive: stats.daysActive,
-
-      // Task Stats (directly from User model)
-      totalTasks: stats.totalTasksAssigned,
-      completedTasks: stats.totalTasksCompleted,
-      totalTasksAssigned: stats.totalTasksAssigned,
-      totalTasksCompleted: stats.totalTasksCompleted,
-
-      // Referral Stats (directly from User model)
+      availableCredits: user.creditsReady || 0,
+      totalCredits: user.totalEarned || 0,
+      dailyCreditsEarned: user.dailyCreditsEarned || 0,
+      dailyCreditLimit: user.getDailyCreditLimit(),
+      dailyProgress: user.dailyProgress || 0,
+      streak: user.currentStreak || 0,
+      totalTasks: user.totalTasksAssigned || 0,
+      completedTasks: user.totalTasksCompleted || 0,
+      coinBalance: user.coinBalance || 0,
+      daysActive: user.daysActive || 0,
+      
       referralStats: {
-        totalReferrals: stats.totalDirectReferrals + stats.totalIndirectReferrals + stats.totalDeepReferrals,
-        totalEarnings: Math.round(stats.totalReferralEarnings),
-        activeReferrals: stats.totalDirectReferrals,
-        level1Referrals: stats.totalDirectReferrals,
-        level2Referrals: stats.totalIndirectReferrals,
-        level3Referrals: stats.totalDeepReferrals
+        totalReferrals: (user.totalDirectReferrals || 0) + (user.totalIndirectReferrals || 0) + (user.totalDeepReferrals || 0),
+        totalEarnings: user.totalReferralEarnings || 0,
+        activeReferrals: user.totalDirectReferrals || 0,
+        level1Referrals: user.totalDirectReferrals || 0,
+        level2Referrals: user.totalIndirectReferrals || 0,
+        level3Referrals: user.totalDeepReferrals || 0
       },
 
-      // Referral Chain
-      referralChain: {
-        level1: stats.level1ReferralUserId,
-        level2: stats.level2ReferralUserId,
-        level3: stats.level3ReferralUserId
-      },
-
-      // User Info
       user: {
         id: user._id,
         firstName: user.firstName,
@@ -226,27 +207,14 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
         email: user.email,
         vipLevel: user.vipLevel,
         isVipActive: user.isVipActive,
-        vipExpiry: user.vipExpiry,
         referralCode: user.referralCode,
-        
-        // Direct access to User model stats
-        creditsReady: user.creditsReady,
-        totalEarned: user.totalEarned,
-        totalWithdrawn: user.totalWithdrawn,
-        coinBalance: user.coinBalance,
-        daysActive: user.daysActive,
-        currentStreak: user.currentStreak
+        coinBalance: user.coinBalance || 0
       }
     });
 
   } catch (error) {
-    console.error('❌ Get dashboard stats error:', error);
-    console.error('❌ Error stack:', error.stack);
-    res.status(500).json({ 
-      message: 'Failed to get dashboard statistics',
-      error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    console.error('Dashboard error:', error);
+    res.status(500).json({ message: 'Failed to get dashboard data' });
   }
 });
 
@@ -383,6 +351,107 @@ router.post('/cleanup-database', authenticateToken, async (req, res) => {
   }
 });
 
+// @route   POST /api/stats/populate-from-old-fields
+// @desc    Populate new User model stats from old fields if they exist
+// @access  Private
+router.post('/populate-from-old-fields', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    console.log('🔄 Populating new stats from old fields for user:', userId);
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    console.log('📊 Before population:', {
+      creditsReady: user.creditsReady,
+      totalEarned: user.totalEarned,
+      oldTotalCredits: user.totalCredits,
+      oldAvailableCredits: user.availableCredits,
+      coinBalance: user.coinBalance
+    });
+
+    // Populate new fields from old fields if they exist and new fields are empty
+    if ((user.creditsReady === undefined || user.creditsReady === null || user.creditsReady === 0) && user.availableCredits) {
+      user.creditsReady = user.availableCredits;
+      console.log('✅ Set creditsReady from availableCredits:', user.creditsReady);
+    }
+
+    if ((user.totalEarned === undefined || user.totalEarned === null || user.totalEarned === 0) && user.totalCredits) {
+      user.totalEarned = user.totalCredits;
+      console.log('✅ Set totalEarned from totalCredits:', user.totalEarned);
+    }
+
+    // Set some basic activity stats if they're missing
+    if (user.daysActive === undefined || user.daysActive === null) {
+      user.daysActive = 1; // At least 1 day since they have an account
+    }
+
+    if (user.currentStreak === undefined || user.currentStreak === null) {
+      user.currentStreak = 1; // At least 1 day streak
+    }
+
+    if (user.dailyProgress === undefined || user.dailyProgress === null) {
+      user.dailyProgress = 0;
+    }
+
+    if (user.totalTasksAssigned === undefined || user.totalTasksAssigned === null) {
+      user.totalTasksAssigned = 0;
+    }
+
+    if (user.totalTasksCompleted === undefined || user.totalTasksCompleted === null) {
+      user.totalTasksCompleted = 0;
+    }
+
+    // Initialize referral stats
+    if (user.totalDirectReferrals === undefined || user.totalDirectReferrals === null) {
+      user.totalDirectReferrals = 0;
+    }
+
+    if (user.totalReferralEarnings === undefined || user.totalReferralEarnings === null) {
+      user.totalReferralEarnings = 0;
+    }
+
+    await user.save();
+
+    console.log('✅ After population:', {
+      creditsReady: user.creditsReady,
+      totalEarned: user.totalEarned,
+      daysActive: user.daysActive,
+      currentStreak: user.currentStreak,
+      coinBalance: user.coinBalance
+    });
+
+    res.json({
+      message: 'User stats populated from old fields successfully!',
+      before: {
+        creditsReady: req.body.before?.creditsReady || 'undefined',
+        totalEarned: req.body.before?.totalEarned || 'undefined'
+      },
+      after: {
+        creditsReady: user.creditsReady,
+        totalEarned: user.totalEarned,
+        totalWithdrawn: user.totalWithdrawn || 0,
+        coinBalance: user.coinBalance,
+        daysActive: user.daysActive,
+        currentStreak: user.currentStreak,
+        totalTasksAssigned: user.totalTasksAssigned,
+        totalTasksCompleted: user.totalTasksCompleted,
+        totalDirectReferrals: user.totalDirectReferrals,
+        totalReferralEarnings: user.totalReferralEarnings
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Populate from old fields error:', error);
+    res.status(500).json({ 
+      message: 'Failed to populate from old fields',
+      error: error.message 
+    });
+  }
+});
+
 // @route   POST /api/stats/seed-test-data
 // @desc    Add test data directly to User model (NEW IMPLEMENTATION - no old database)
 // @access  Private
@@ -448,6 +517,81 @@ router.post('/seed-test-data', authenticateToken, async (req, res) => {
     console.error('❌ Seed test data error:', error);
     res.status(500).json({ 
       message: 'Failed to seed test data',
+      error: error.message 
+    });
+  }
+});
+
+// @route   GET /api/stats/debug-current-user
+// @desc    Debug current user data in detail
+// @access  Private
+router.get('/debug-current-user', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    console.log('🔍 Debug current user requested for:', userId);
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get the raw user data
+    const rawUserData = user.toObject();
+    
+    // Get the dashboard stats
+    const dashboardStats = user.getDashboardStats();
+
+    console.log('📊 Raw User Data:', {
+      creditsReady: rawUserData.creditsReady,
+      totalEarned: rawUserData.totalEarned,
+      coinBalance: rawUserData.coinBalance,
+      dailyCreditsEarned: rawUserData.dailyCreditsEarned,
+      daysActive: rawUserData.daysActive,
+      currentStreak: rawUserData.currentStreak
+    });
+
+    res.json({
+      message: 'Current user data debug',
+      userId: userId,
+      rawUserFields: {
+        // Financial fields
+        creditsReady: rawUserData.creditsReady,
+        totalEarned: rawUserData.totalEarned,
+        totalWithdrawn: rawUserData.totalWithdrawn,
+        coinBalance: rawUserData.coinBalance,
+        totalCredits: rawUserData.totalCredits, // Old field
+        availableCredits: rawUserData.availableCredits, // Old field
+        
+        // Activity fields
+        dailyCreditsEarned: rawUserData.dailyCreditsEarned,
+        dailyProgress: rawUserData.dailyProgress,
+        daysActive: rawUserData.daysActive,
+        currentStreak: rawUserData.currentStreak,
+        
+        // Task fields
+        totalTasksAssigned: rawUserData.totalTasksAssigned,
+        totalTasksCompleted: rawUserData.totalTasksCompleted,
+        
+        // Referral fields
+        totalDirectReferrals: rawUserData.totalDirectReferrals,
+        totalIndirectReferrals: rawUserData.totalIndirectReferrals,
+        totalDeepReferrals: rawUserData.totalDeepReferrals,
+        totalReferralEarnings: rawUserData.totalReferralEarnings
+      },
+      dashboardStats: dashboardStats,
+      fieldStatus: {
+        hasCreditsReady: rawUserData.creditsReady !== undefined && rawUserData.creditsReady !== null,
+        hasOldCredits: rawUserData.totalCredits !== undefined && rawUserData.totalCredits !== null,
+        creditsReadyValue: rawUserData.creditsReady,
+        oldCreditsValue: rawUserData.totalCredits,
+        coinBalanceValue: rawUserData.coinBalance
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Debug current user error:', error);
+    res.status(500).json({ 
+      message: 'Debug failed',
       error: error.message 
     });
   }
