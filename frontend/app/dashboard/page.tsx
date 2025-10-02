@@ -207,6 +207,43 @@ export default function DashboardPage() {
     }
   }
 
+  const testDashboardV2 = async () => {
+    try {
+      const response = await apiRequest('api/stats/dashboard-v2', {
+        headers: getAuthHeaders()
+      })
+      const data = await response.json()
+      if (response.ok) {
+        console.log('Dashboard V2 data:', data)
+        // Update stats with V2 data
+        const transformedStats = {
+          availableCredits: data.availableCredits || 0,
+          totalCredits: data.totalCredits || 0,
+          dailyCreditsEarned: data.dailyCreditsEarned || 0,
+          dailyCreditLimit: data.dailyCreditLimit || 0,
+          dailyProgress: data.dailyProgress || 0,
+          streak: data.streak || 0,
+          totalTasks: data.totalTasks || 0,
+          completedTasks: data.completedTasks || 0,
+          coinBalance: data.coinBalance || 0,
+          totalCoinsEarned: data.totalCoinsEarned || 0,
+          referralStats: {
+            totalReferrals: data.referralStats?.totalReferrals || 0,
+            totalEarnings: data.referralStats?.totalEarnings || 0,
+            activeReferrals: data.referralStats?.activeReferrals || 0
+          }
+        }
+        setStats(transformedStats)
+        alert('Dashboard V2 loaded! Stats updated from User model.')
+      } else {
+        alert('Failed to load V2: ' + data.message)
+      }
+    } catch (error) {
+      console.error('Dashboard V2 error:', error)
+      alert('Error loading Dashboard V2')
+    }
+  }
+
   // Show loading screen while checking authentication
   if (loading) {
     return (
@@ -381,6 +418,12 @@ export default function DashboardPage() {
                 className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
               >
                 Debug
+              </button>
+              <button 
+                onClick={testDashboardV2}
+                className="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
+              >
+                Test V2
               </button>
               
               {user.vipLevel > 0 && (

@@ -76,6 +76,85 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  
+  // === COMPREHENSIVE STATS FIELDS ===
+  
+  // Referral Tracking
+  level1ReferralUserId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  level2ReferralUserId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  level3ReferralUserId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  
+  // Task & Activity Stats
+  totalTasksAssigned: {
+    type: Number,
+    default: 0
+  },
+  totalTasksCompleted: {
+    type: Number,
+    default: 0
+  },
+  daysActive: {
+    type: Number,
+    default: 0
+  },
+  currentStreak: {
+    type: Number,
+    default: 0
+  },
+  lastActiveDate: {
+    type: Date,
+    default: null
+  },
+  
+  // Financial Stats
+  totalWithdrawn: {
+    type: Number,
+    default: 0
+  },
+  dailyProgress: {
+    type: Number,
+    default: 0 // Percentage (0-100)
+  },
+  
+  // Calculated Fields (for easy access)
+  creditsReady: {
+    type: Number,
+    default: 0 // Current available balance
+  },
+  totalEarned: {
+    type: Number,
+    default: 0 // creditsReady + totalWithdrawn
+  },
+  
+  // Referral Stats
+  totalDirectReferrals: {
+    type: Number,
+    default: 0
+  },
+  totalIndirectReferrals: {
+    type: Number,
+    default: 0
+  },
+  totalDeepReferrals: {
+    type: Number,
+    default: 0
+  },
+  totalReferralEarnings: {
+    type: Number,
+    default: 0
+  },
   dailyAdsWatched: {
     type: Number,
     default: 0
@@ -363,6 +442,178 @@ userSchema.methods.getDailyCreditLimit = function() {
 // Method to check if user has reached daily credit limit (alias for hasReachedDailyEarningLimit)
 userSchema.methods.hasReachedDailyLimit = function() {
   return this.hasReachedDailyEarningLimit();
+};
+
+// === COMPREHENSIVE STATS UPDATE METHODS ===
+
+// Update user stats when earning credits/coins
+userSchema.methods.updateEarningStats = function(amount, source = 'task') {
+  this.creditsReady += amount;
+  this.totalEarned = this.creditsReady + this.totalWithdrawn;
+  this.dailyCreditsEarned += amount;
+  
+  // Update daily progress
+  const dailyLimit = this.getDailyCreditLimit();
+  this.dailyProgress = Math.min((this.dailyCreditsEarned / dailyLimit) * 100, 100);
+  
+  // Update activity tracking
+  this.updateActivityStats();
+  
+  return this.save();
+};
+
+// Update user stats when withdrawing
+userSchema.methods.updateWithdrawalStats = function(amount) {
+  this.creditsReady -= amount;
+  this.totalWithdrawn += amount;
+  // totalEarned stays the same (creditsReady + totalWithdrawn)
+  
+  return this.save();
+};
+
+// Update activity stats (streak, days active)
+userSchema.methods.updateActivityStats = function() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const lastActive = this.lastActiveDate ? new Date(this.lastActiveDate) : null;
+  if (lastActive) {
+    lastActive.setHours(0, 0, 0, 0);
+  }
+  
+  // Check if this is a new day of activity
+  if (!lastActive || lastActive.getTime() !== today.getTime()) {
+    this.daysActive += 1;
+    
+    // Update streak
+    if (lastActive) {
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      if (lastActive.getTime() === yesterday.getTime()) {
+        // Consecutive day - increment streak
+        this.currentStreak += 1;
+      } else {
+        // Gap in activity - reset streak
+        this.currentStreak = 1;
+      }
+    } else {
+      // First day active
+      this.currentStreak = 1;
+    }
+    
+    this.lastActiveDate = today;
+  }
+};
+
+// Update task completion stats
+userSchema.methods.updateTaskStats = function(assigned = 0, completed = 0) {
+  this.totalTasksAssigned += assigned;
+  this.totalTasksCompleted += completed;
+  
+  return this.save();
+};
+
+// Update referral stats
+userSchema.methods.updateReferralStats = function(level, earnings = 0) {
+  switch (level) {
+    case 1:
+      this.totalDirectReferrals += 1;
+      break;
+    case 2:
+      this.totalIndirectReferrals += 1;
+      break;
+    case 3:
+      this.totalDeepReferrals += 1;
+      break;
+  }
+  
+  if (earnings > 0) {
+    this.totalReferralEarnings += earnings;
+  }
+  
+  return this.save();
+};
+
+// Set referral chain (when user signs up with referral code)
+userSchema.methods.setReferralChain = async function(referralCode) {
+  const referrer = await this.constructor.findOne({ referralCode });
+  if (!referrer) return false;
+  
+  // Set level 1 referrer
+  this.level1ReferralUserId = referrer._id;
+  
+  // Set level 2 referrer (referrer's level 1)
+  if (referrer.level1ReferralUserId) {
+    this.level2ReferralUserId = referrer.level1ReferralUserId;
+    
+    // Set level 3 referrer (referrer's level 2)
+    if (referrer.level2ReferralUserId) {
+      this.level3ReferralUserId = referrer.level2ReferralUserId;
+    }
+  }
+  
+  await this.save();
+  
+  // Update referrer's stats
+  await referrer.updateReferralStats(1);
+  
+  // Update level 2 referrer's stats
+  if (this.level2ReferralUserId) {
+    const level2Referrer = await this.constructor.findById(this.level2ReferralUserId);
+    if (level2Referrer) {
+      await level2Referrer.updateReferralStats(2);
+    }
+  }
+  
+  // Update level 3 referrer's stats
+  if (this.level3ReferralUserId) {
+    const level3Referrer = await this.constructor.findById(this.level3ReferralUserId);
+    if (level3Referrer) {
+      await level3Referrer.updateReferralStats(3);
+    }
+  }
+  
+  return true;
+};
+
+// Get comprehensive dashboard stats (directly from user model)
+userSchema.methods.getDashboardStats = function() {
+  return {
+    // VIP Info
+    vipLevel: this.vipLevel,
+    isVipActive: this.isVipActive,
+    
+    // Financial Stats
+    creditsReady: this.creditsReady,
+    totalEarned: this.totalEarned,
+    totalWithdrawn: this.totalWithdrawn,
+    coinBalance: this.coinBalance,
+    
+    // Daily Stats
+    dailyCreditsEarned: this.dailyCreditsEarned,
+    dailyCreditLimit: this.getDailyCreditLimit(),
+    dailyProgress: this.dailyProgress,
+    
+    // Activity Stats
+    daysActive: this.daysActive,
+    currentStreak: this.currentStreak,
+    
+    // Task Stats
+    totalTasksAssigned: this.totalTasksAssigned,
+    totalTasksCompleted: this.totalTasksCompleted,
+    
+    // Referral Stats
+    totalDirectReferrals: this.totalDirectReferrals,
+    totalIndirectReferrals: this.totalIndirectReferrals,
+    totalDeepReferrals: this.totalDeepReferrals,
+    totalReferralEarnings: this.totalReferralEarnings,
+    
+    // Referral Chain
+    level1ReferralUserId: this.level1ReferralUserId,
+    level2ReferralUserId: this.level2ReferralUserId,
+    level3ReferralUserId: this.level3ReferralUserId
+  };
 };
 
 module.exports = mongoose.model('User', userSchema);

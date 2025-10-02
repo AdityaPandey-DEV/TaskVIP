@@ -321,6 +321,105 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
   }
 });
 
+// @route   GET /api/stats/dashboard-v2
+// @desc    Get user's comprehensive dashboard statistics (from User model - FAST)
+// @access  Private
+router.get('/dashboard-v2', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    console.log('📊 Dashboard V2 stats requested for user:', userId);
+    
+    const user = await User.findById(userId);
+
+    if (!user) {
+      console.log('❌ User not found:', userId);
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    console.log('✅ User found:', user.email, 'Stats from User model');
+
+    // Get comprehensive stats directly from user model (FAST!)
+    const stats = user.getDashboardStats();
+    
+    console.log('📊 User Model Stats:', {
+      creditsReady: stats.creditsReady,
+      totalEarned: stats.totalEarned,
+      dailyProgress: stats.dailyProgress,
+      currentStreak: stats.currentStreak
+    });
+
+    res.json({
+      // Financial Stats (directly from User model)
+      availableCredits: Math.round(stats.creditsReady),
+      creditsReady: Math.round(stats.creditsReady),
+      totalCredits: Math.round(stats.totalEarned), // Total earned
+      totalEarned: Math.round(stats.totalEarned),
+      totalWithdrawn: Math.round(stats.totalWithdrawn),
+      coinBalance: Math.round(stats.coinBalance),
+
+      // Daily Stats (directly from User model)
+      dailyCreditsEarned: Math.round(stats.dailyCreditsEarned),
+      dailyCreditLimit: Math.round(stats.dailyCreditLimit),
+      dailyProgress: Math.round(stats.dailyProgress),
+
+      // Activity Stats (directly from User model)
+      streak: stats.currentStreak,
+      currentStreak: stats.currentStreak,
+      daysActive: stats.daysActive,
+
+      // Task Stats (directly from User model)
+      totalTasks: stats.totalTasksAssigned,
+      completedTasks: stats.totalTasksCompleted,
+      totalTasksAssigned: stats.totalTasksAssigned,
+      totalTasksCompleted: stats.totalTasksCompleted,
+
+      // Referral Stats (directly from User model)
+      referralStats: {
+        totalReferrals: stats.totalDirectReferrals + stats.totalIndirectReferrals + stats.totalDeepReferrals,
+        totalEarnings: Math.round(stats.totalReferralEarnings),
+        activeReferrals: stats.totalDirectReferrals,
+        level1Referrals: stats.totalDirectReferrals,
+        level2Referrals: stats.totalIndirectReferrals,
+        level3Referrals: stats.totalDeepReferrals
+      },
+
+      // Referral Chain
+      referralChain: {
+        level1: stats.level1ReferralUserId,
+        level2: stats.level2ReferralUserId,
+        level3: stats.level3ReferralUserId
+      },
+
+      // User Info
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        vipLevel: user.vipLevel,
+        isVipActive: user.isVipActive,
+        vipExpiry: user.vipExpiry,
+        referralCode: user.referralCode,
+        
+        // Direct access to User model stats
+        creditsReady: user.creditsReady,
+        totalEarned: user.totalEarned,
+        totalWithdrawn: user.totalWithdrawn,
+        coinBalance: user.coinBalance,
+        daysActive: user.daysActive,
+        currentStreak: user.currentStreak
+      }
+    });
+
+  } catch (error) {
+    console.error('Get dashboard V2 stats error:', error);
+    res.status(500).json({ 
+      message: 'Failed to get dashboard statistics',
+      error: error.message 
+    });
+  }
+});
+
 // @route   POST /api/stats/seed-test-data
 // @desc    Add test data for user (development only)
 // @access  Private
@@ -393,24 +492,39 @@ router.post('/seed-test-data', authenticateToken, async (req, res) => {
       await Coin.create(coinData);
     }
 
-    // Update user balances
-    const totalCredits = await Credit.getUserTotalCredits(userId);
-    const availableCredits = await Credit.getUserAvailableCredits(userId);
-    
-    user.totalCredits = totalCredits;
-    user.availableCredits = availableCredits;
+    // Update user stats directly in User model (NEW APPROACH)
+    user.creditsReady = (user.creditsReady || 0) + 175; // Add test credits
+    user.totalEarned = user.creditsReady + user.totalWithdrawn; // Update total earned
     user.coinBalance = (user.coinBalance || 0) + 250; // Add test coins
     user.dailyCreditsEarned = 75; // Set some daily progress
+    user.dailyProgress = 75; // Set daily progress percentage
+    user.daysActive = (user.daysActive || 0) + 1; // Increment days active
+    user.currentStreak = Math.max(user.currentStreak || 0, 1); // Set minimum streak
+    user.totalTasksAssigned = (user.totalTasksAssigned || 0) + 5; // Add test tasks
+    user.totalTasksCompleted = (user.totalTasksCompleted || 0) + 3; // Add completed tasks
+    
+    // Update activity tracking
+    user.updateActivityStats();
+    
     await user.save();
 
     res.json({
-      message: 'Test data seeded successfully',
+      message: 'Test data seeded successfully - User model updated!',
       data: {
         creditsAdded: testCredits.length,
         coinsAdded: testCoins.length,
-        newTotalCredits: totalCredits,
-        newAvailableCredits: availableCredits,
-        newCoinBalance: user.coinBalance
+        
+        // New User model stats
+        creditsReady: user.creditsReady,
+        totalEarned: user.totalEarned,
+        totalWithdrawn: user.totalWithdrawn,
+        coinBalance: user.coinBalance,
+        dailyCreditsEarned: user.dailyCreditsEarned,
+        dailyProgress: user.dailyProgress,
+        daysActive: user.daysActive,
+        currentStreak: user.currentStreak,
+        totalTasksAssigned: user.totalTasksAssigned,
+        totalTasksCompleted: user.totalTasksCompleted
       }
     });
 
