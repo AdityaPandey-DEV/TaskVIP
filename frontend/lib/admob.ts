@@ -101,10 +101,53 @@ export const loadRewardedAd = (): Promise<boolean> => {
 
 export const showRewardedAd = (): Promise<boolean> => {
   return new Promise((resolve) => {
-    console.log('🎬 Attempting to show AdMob rewarded ad...');
+    console.log('🎬 Attempting to show real AdMob rewarded ad...');
     
-    // For now, we'll create a more realistic ad experience
-    // In a real implementation, this would trigger the actual AdMob ad
+    // Try to load real AdMob ad first
+    if (typeof window !== 'undefined' && window.adsbygoogle) {
+      try {
+        // Request real AdMob rewarded video ad
+        const adRequest = {
+          adUnitId: admobConfig.testMode ? admobConfig.testRewardedAdUnitId : admobConfig.rewardedAdUnitId,
+          adFormat: 'rewarded',
+          onAdLoaded: () => {
+            console.log('✅ Real AdMob ad loaded');
+            resolve(true);
+          },
+          onAdFailedToLoad: (error: any) => {
+            console.log('❌ Real AdMob ad failed to load:', error);
+            // Fallback to mock experience
+            showMockAdExperience().then(resolve);
+          },
+          onUserEarnedReward: (reward: any) => {
+            console.log('💰 User earned reward:', reward);
+            resolve(true);
+          }
+        };
+        
+        // Push real ad request to AdMob
+        window.adsbygoogle.push(adRequest);
+        
+        // Timeout fallback after 5 seconds
+        setTimeout(() => {
+          console.log('⏰ AdMob timeout, showing mock experience');
+          showMockAdExperience().then(resolve);
+        }, 5000);
+        
+      } catch (error) {
+        console.error('❌ AdMob error:', error);
+        showMockAdExperience().then(resolve);
+      }
+    } else {
+      console.log('📱 AdMob not available, showing mock experience');
+      showMockAdExperience().then(resolve);
+    }
+  });
+};
+
+const showMockAdExperience = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    console.log('🎬 Showing mock ad experience...');
     
     const adDialog = document.createElement('div');
     adDialog.style.cssText = `
@@ -166,7 +209,7 @@ export const showRewardedAd = (): Promise<boolean> => {
         <!-- Video Area -->
         <div style="
           height: 200px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+          background: #000;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -175,6 +218,17 @@ export const showRewardedAd = (): Promise<boolean> => {
           position: relative;
           overflow: hidden;
         ">
+          <!-- Actual Video Element -->
+          <video id="adVideo" style="
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+          " muted>
+            <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+            <source src="https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4" type="video/mp4">
+          </video>
+          
           <!-- Play button overlay -->
           <div id="playButton" style="
             width: 60px;
@@ -187,6 +241,8 @@ export const showRewardedAd = (): Promise<boolean> => {
             cursor: pointer;
             transition: transform 0.2s;
             margin-bottom: 10px;
+            position: absolute;
+            z-index: 10;
           ">
             <div style="
               width: 0;
@@ -197,7 +253,17 @@ export const showRewardedAd = (): Promise<boolean> => {
               margin-left: 4px;
             "></div>
           </div>
-          <div id="videoStatus" style="font-size: 16px; font-weight: 600;">Click to start video</div>
+          
+          <!-- Video Status Overlay -->
+          <div id="videoStatus" style="
+            font-size: 16px; 
+            font-weight: 600;
+            position: absolute;
+            z-index: 5;
+            background: rgba(0,0,0,0.7);
+            padding: 8px 16px;
+            border-radius: 20px;
+          ">Click to start video</div>
           
           <!-- Progress bar -->
           <div id="progressContainer" style="
@@ -265,6 +331,7 @@ export const showRewardedAd = (): Promise<boolean> => {
     const adInfo = adDialog.querySelector('#adInfo') as HTMLElement;
     const skipBtn = adDialog.querySelector('#skipBtn') as HTMLElement;
     const rewardBtn = adDialog.querySelector('#rewardBtn') as HTMLButtonElement;
+    const adVideo = adDialog.querySelector('#adVideo') as HTMLVideoElement;
     
     let videoStarted = false;
     let videoCompleted = false;
@@ -278,31 +345,68 @@ export const showRewardedAd = (): Promise<boolean> => {
     
     const startVideo = () => {
       videoStarted = true;
-      playButton.style.display = 'none';
-      videoStatus.textContent = '📺 Video Playing...';
-      progressContainer.style.display = 'block';
-      adInfo.textContent = 'Watch for 15 seconds to earn coins! 💰';
       
-      let timeLeft = 15;
-      const timer = setInterval(() => {
-        timeLeft--;
-        const progress = ((15 - timeLeft) / 15) * 100;
-        progressBar.style.width = `${progress}%`;
+      // Hide play button and show video
+      playButton.style.display = 'none';
+      videoStatus.style.display = 'none';
+      adVideo.style.display = 'block';
+      progressContainer.style.display = 'block';
+      
+      // Start playing the video
+      adVideo.play().then(() => {
+        console.log('🎬 Video started playing');
+        adInfo.textContent = 'Watch the full video to earn coins! 💰';
         
-        if (timeLeft > 0) {
-          rewardBtn.textContent = `Claim Reward (${15 - timeLeft}s)`;
-          adInfo.textContent = `${timeLeft} seconds remaining...`;
-        } else {
-          clearInterval(timer);
-          videoCompleted = true;
-          videoStatus.textContent = '✅ Video Complete!';
-          adInfo.textContent = 'Video completed! Click to claim your reward! 🎉';
-          rewardBtn.disabled = false;
-          rewardBtn.style.opacity = '1';
-          rewardBtn.style.background = '#34a853';
-          rewardBtn.textContent = '🎉 Claim 5 Coins!';
-        }
-      }, 1000);
+        // Track video progress
+        let timeLeft = 15;
+        const timer = setInterval(() => {
+          timeLeft--;
+          const progress = ((15 - timeLeft) / 15) * 100;
+          progressBar.style.width = `${progress}%`;
+          
+          if (timeLeft > 0) {
+            rewardBtn.textContent = `Claim Reward (${15 - timeLeft}s)`;
+            adInfo.textContent = `${timeLeft} seconds remaining...`;
+          } else {
+            clearInterval(timer);
+            videoCompleted = true;
+            adVideo.pause();
+            
+            // Show completion overlay
+            const completionOverlay = document.createElement('div');
+            completionOverlay.style.cssText = `
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: rgba(0,0,0,0.8);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-size: 18px;
+              font-weight: bold;
+              z-index: 20;
+            `;
+            completionOverlay.textContent = '✅ Video Complete!';
+            adVideo.parentElement?.appendChild(completionOverlay);
+            
+            adInfo.textContent = 'Video completed! Click to claim your reward! 🎉';
+            rewardBtn.disabled = false;
+            rewardBtn.style.opacity = '1';
+            rewardBtn.style.background = '#34a853';
+            rewardBtn.textContent = '🎉 Claim 5 Coins!';
+          }
+        }, 1000);
+        
+      }).catch((error) => {
+        console.error('❌ Video play error:', error);
+        // Fallback to text-based experience
+        videoStatus.style.display = 'block';
+        videoStatus.textContent = '📺 Video Playing...';
+        adInfo.textContent = 'Watch for 15 seconds to earn coins! 💰';
+      });
     };
     
     // Skip button handler

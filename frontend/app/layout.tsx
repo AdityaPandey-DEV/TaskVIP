@@ -3,7 +3,6 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { Toaster } from 'react-hot-toast'
-import { AdMobInitializer } from '@/components/AdMobInitializer'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -44,10 +43,22 @@ export default function RootLayout({
           <head>
             <script src="https://accounts.google.com/gsi/client" async defer></script>
             <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1881146103066218" crossOrigin="anonymous"></script>
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.addEventListener('DOMContentLoaded', function() {
+                    if (typeof window !== 'undefined' && !window.__ADMOB_INITIALIZED__) {
+                      window.adsbygoogle = window.adsbygoogle || [];
+                      window.__ADMOB_INITIALIZED__ = true;
+                      console.log('🎬 AdMob initialized from layout');
+                    }
+                  });
+                `
+              }}
+            />
           </head>
       <body className={inter.className}>
         <AuthProvider>
-          <AdMobInitializer />
           {children}
           <Toaster
             position="top-right"
