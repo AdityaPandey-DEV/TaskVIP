@@ -49,6 +49,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <script 
+          src="https://fpyf8.com/88/tag.min.js" 
+          data-zone="175243" 
+          async 
+          data-cfasync="false"
+        />
+      </head>
       <body className={inter.className}>
         <AuthProvider>
           {children}

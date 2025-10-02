@@ -19,6 +19,7 @@ import {
   Award
 } from 'lucide-react'
 import Link from 'next/link'
+import { BannerAd, SidebarAd, InlineAd, VideoAd, NativeAd } from '@/components/AdComponents'
 
 interface DashboardStats {
   totalCredits: number
@@ -147,6 +148,9 @@ export default function DashboardPage() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Top Banner Ad - Maximum Visibility */}
+        <BannerAd className="mb-6" />
+        
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="stat-card">
@@ -199,6 +203,9 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Inline Ad after Stats */}
+        <InlineAd className="mb-8" />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Daily Tasks */}
@@ -257,6 +264,9 @@ export default function DashboardPage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Sidebar Ad - High Value */}
+            <SidebarAd />
+            
             {/* VIP Status */}
             <div className="card">
               <div className="card-header">
@@ -292,6 +302,9 @@ export default function DashboardPage() {
                 </div>
               )}
             </div>
+
+            {/* Video Ad - High Value */}
+            <VideoAd className="my-4" />
 
             {/* Referral Program */}
             <div className="card">
@@ -359,8 +372,14 @@ export default function DashboardPage() {
                 </Link>
               </div>
             </div>
+            
+            {/* Native Ad - Bottom Placement */}
+            <NativeAd className="mt-4" />
           </div>
         </div>
+        
+        {/* Bottom Banner Ad - Final Impression */}
+        <BannerAd className="mt-8" />
       </div>
     </div>
   )
