@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import Cookies from 'js-cookie'
 import { apiRequest } from '@/lib/api'
+import { initializeAdMob, showRewardedAd } from '@/lib/admob'
 import { PlayCircle, DollarSign, Gift, CheckCircle, Loader2, Clock, Zap, Repeat } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
@@ -58,6 +59,8 @@ export function RewardSystem() {
     if (user) {
       fetchRewardTasks()
       fetchUserCoins()
+      // Initialize AdMob when component mounts
+      initializeAdMob()
     }
   }, [user])
 
@@ -185,14 +188,14 @@ export function RewardSystem() {
     setCompletingTask(taskId)
     
     try {
-      // Always show the video experience (mock player until real AdMob is integrated)
-      toast('Loading video ad...', { icon: '📺' })
+      // Show real AdMob video ad
+      toast('Loading AdMob video ad...', { icon: '🎬' })
       
-      // Simulate video ad loading
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      // Simulate ad loading
+      await new Promise(resolve => setTimeout(resolve, 1000))
       
-      // Show the video dialog (mock player)
-      const watchVideo = await showMockVideoDialog()
+      // Show the real AdMob video dialog
+      const watchVideo = await showRewardedAd()
       
       if (watchVideo) {
         // Award coins after video completion
@@ -206,7 +209,7 @@ export function RewardSystem() {
         
         if (response.ok) {
           const data = await response.json()
-          toast.success(`Video completed! You earned ${data.coinsEarned || 5} coins!`)
+          toast.success(`AdMob video completed! You earned ${data.coinsEarned || 5} coins! 🎉`)
           fetchRewardTasks()
           fetchUserCoins()
         } else {
@@ -214,175 +217,17 @@ export function RewardSystem() {
           toast.error(error.message || 'Failed to award coins')
         }
       } else {
-        toast.error('Video was not completed - no reward given')
+        toast.error('Video was skipped - no reward given')
       }
     } catch (error) {
-      console.error('Error with video ad:', error)
-      toast.error('Failed to load video ad. Please try again.')
+      console.error('Error with AdMob video:', error)
+      toast.error('Failed to load AdMob video. Please try again.')
     } finally {
       setCompletingTask(null)
     }
   }
 
-  const showMockVideoDialog = (): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const dialog = document.createElement('div')
-      dialog.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.8);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10000;
-      `
-      
-      dialog.innerHTML = `
-        <div style="
-          background: white;
-          padding: 20px;
-          border-radius: 15px;
-          text-align: center;
-          max-width: 450px;
-          margin: 20px;
-          box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-        ">
-          <h3 style="margin-bottom: 15px; color: #333; font-size: 20px;">🎬 Rewarded Video Ad</h3>
-          <div style="
-            width: 100%;
-            max-width: 350px;
-            height: 220px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-            margin: 15px auto;
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 16px;
-            font-weight: bold;
-            position: relative;
-            overflow: hidden;
-          ">
-            <div style="
-              position: absolute;
-              top: 0;
-              left: 0;
-              right: 0;
-              bottom: 0;
-              background: url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><circle cx=\"50\" cy=\"50\" r=\"40\" fill=\"none\" stroke=\"white\" stroke-width=\"2\" opacity=\"0.3\"/><polygon points=\"40,35 40,65 65,50\" fill=\"white\" opacity=\"0.8\"/></svg>') center/60px no-repeat;
-            "></div>
-            <div style="z-index: 1; margin-top: 20px;">📺 Video Playing...</div>
-            <div id="videoProgress" style="
-              position: absolute;
-              bottom: 10px;
-              left: 10px;
-              right: 10px;
-              height: 4px;
-              background: rgba(255,255,255,0.3);
-              border-radius: 2px;
-            ">
-              <div id="progressBar" style="
-                height: 100%;
-                background: white;
-                border-radius: 2px;
-                width: 0%;
-                transition: width 1s linear;
-              "></div>
-            </div>
-          </div>
-          <div style="margin: 15px 0;">
-            <div id="countdown" style="font-size: 16px; color: #666; font-weight: 500;">Watch for 15 seconds to earn 5 coins! 💰</div>
-          </div>
-          <div style="display: flex; gap: 10px; justify-content: center;">
-            <button id="closeBtn" style="
-              background: #dc3545;
-              color: white;
-              border: none;
-              padding: 10px 20px;
-              border-radius: 8px;
-              cursor: pointer;
-              font-weight: 500;
-              transition: background 0.2s;
-            ">❌ Close (No Reward)</button>
-            <button id="completeBtn" style="
-              background: #6c757d;
-              color: white;
-              border: none;
-              padding: 10px 20px;
-              border-radius: 8px;
-              cursor: not-allowed;
-              opacity: 0.6;
-              font-weight: 500;
-            " disabled>⏳ Complete (0s)</button>
-          </div>
-        </div>
-      `
-      
-      document.body.appendChild(dialog)
-      
-      const closeBtn = dialog.querySelector('#closeBtn')
-      const completeBtn = dialog.querySelector('#completeBtn') as HTMLButtonElement
-      const countdown = dialog.querySelector('#countdown')
-      const progressBar = dialog.querySelector('#progressBar') as HTMLElement
-      
-      let timeLeft = 15
-      const totalTime = 15
-      const timer = setInterval(() => {
-        timeLeft--
-        const progress = ((totalTime - timeLeft) / totalTime) * 100
-        
-        // Update progress bar
-        if (progressBar) {
-          progressBar.style.width = `${progress}%`
-        }
-        
-        // Update countdown text
-        if (countdown) {
-          if (timeLeft > 0) {
-            countdown.textContent = `Watch for ${timeLeft} seconds to earn 5 coins! 💰`
-          } else {
-            countdown.textContent = 'Video completed! Click to claim your reward! 🎉'
-          }
-        }
-        
-        // Update button
-        if (completeBtn) {
-          if (timeLeft > 0) {
-            completeBtn.textContent = `⏳ Complete (${totalTime - timeLeft}s)`
-          } else {
-            completeBtn.disabled = false
-            completeBtn.style.opacity = '1'
-            completeBtn.style.cursor = 'pointer'
-            completeBtn.style.background = '#28a745'
-            completeBtn.textContent = '🎉 Claim Reward!'
-          }
-        }
-        
-        if (timeLeft <= 0) {
-          clearInterval(timer)
-        }
-      }, 1000)
-      
-      closeBtn?.addEventListener('click', () => {
-        clearInterval(timer)
-        document.body.removeChild(dialog)
-        resolve(false)
-      })
-      
-      completeBtn?.addEventListener('click', () => {
-        if (!completeBtn.disabled) {
-          clearInterval(timer)
-          document.body.removeChild(dialog)
-          resolve(true)
-        }
-      })
-    })
-  }
+  // Mock video dialog removed - now using real AdMob integration from /lib/admob.ts
 
   const getTaskIcon = (type: RewardTask['type']) => {
     switch (type) {
