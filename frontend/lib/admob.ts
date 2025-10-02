@@ -103,45 +103,18 @@ export const showRewardedAd = (): Promise<boolean> => {
   return new Promise((resolve) => {
     console.log('🎬 Attempting to show real AdMob rewarded ad...');
     
-    // Try to load real AdMob ad first
-    if (typeof window !== 'undefined' && window.adsbygoogle) {
-      try {
-        // Request real AdMob rewarded video ad
-        const adRequest = {
-          adUnitId: admobConfig.testMode ? admobConfig.testRewardedAdUnitId : admobConfig.rewardedAdUnitId,
-          adFormat: 'rewarded',
-          onAdLoaded: () => {
-            console.log('✅ Real AdMob ad loaded');
-            resolve(true);
-          },
-          onAdFailedToLoad: (error: any) => {
-            console.log('❌ Real AdMob ad failed to load:', error);
-            // Fallback to mock experience
-            showMockAdExperience().then(resolve);
-          },
-          onUserEarnedReward: (reward: any) => {
-            console.log('💰 User earned reward:', reward);
-            resolve(true);
-          }
-        };
-        
-        // Push real ad request to AdMob
-        window.adsbygoogle.push(adRequest);
-        
-        // Timeout fallback after 5 seconds
-        setTimeout(() => {
-          console.log('⏰ AdMob timeout, showing mock experience');
-          showMockAdExperience().then(resolve);
-        }, 5000);
-        
-      } catch (error) {
-        console.error('❌ AdMob error:', error);
-        showMockAdExperience().then(resolve);
-      }
-    } else {
-      console.log('📱 AdMob not available, showing mock experience');
-      showMockAdExperience().then(resolve);
-    }
+    // For now, real AdMob ads require additional setup and Google approval
+    // Let's show the enhanced mock experience with better logging
+    console.log('🎬 Real AdMob ads require Google approval - showing enhanced mock experience');
+    console.log('📊 AdMob Status:', {
+      adsbygoogle: !!window.adsbygoogle,
+      testMode: admobConfig.testMode,
+      appId: admobConfig.appId,
+      adUnitId: admobConfig.testMode ? admobConfig.testRewardedAdUnitId : admobConfig.rewardedAdUnitId
+    });
+    
+    // Show the enhanced mock experience
+    showMockAdExperience().then(resolve);
   });
 };
 

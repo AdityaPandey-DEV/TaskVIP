@@ -187,13 +187,13 @@ export function RewardSystem() {
     setCompletingTask(taskId)
     
     try {
-      // Show real AdMob video ad
-      toast('Loading AdMob video ad...', { icon: '🎬' })
+      // Show enhanced video ad experience
+      toast('Loading premium video ad...', { icon: '🎬' })
       
       // Simulate ad loading
       await new Promise(resolve => setTimeout(resolve, 1000))
       
-      // Show the real AdMob video dialog
+      // Show the enhanced video dialog
       const watchVideo = await showRewardedAd()
       
       if (watchVideo) {
@@ -208,7 +208,7 @@ export function RewardSystem() {
         
         if (response.ok) {
           const data = await response.json()
-          toast.success(`AdMob video completed! You earned ${data.coinsEarned || 5} coins! 🎉`)
+          toast.success(`Video completed! You earned ${data.coinsEarned || 5} coins! 🎉`)
           fetchRewardTasks()
           fetchUserCoins()
         } else {
@@ -219,8 +219,8 @@ export function RewardSystem() {
         toast.error('Video was skipped - no reward given')
       }
     } catch (error) {
-      console.error('Error with AdMob video:', error)
-      toast.error('Failed to load AdMob video. Please try again.')
+      console.error('Error with video ad:', error)
+      toast.error('Failed to load video ad. Please try again.')
     } finally {
       setCompletingTask(null)
     }
