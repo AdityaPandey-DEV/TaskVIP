@@ -251,10 +251,10 @@ router.post('/create', authenticateToken, async (req, res) => {
     }
     
     // Check minimum amount
-    if (amount < 50) {
+    if (amount < 10) {
       return res.status(400).json({
         success: false,
-        message: 'Minimum withdrawal amount is ₹50'
+        message: 'Minimum withdrawal amount is ₹10'
       });
     }
     
@@ -267,13 +267,15 @@ router.post('/create', authenticateToken, async (req, res) => {
       });
     }
     
-    const coinAmount = amount * 10; // 10 coins = ₹1
-    if (user.coinBalance < coinAmount) {
+    const creditsRequired = amount * 10; // 10 credits = ₹1
+    const availableCredits = user.creditsReady || user.availableCredits || 0;
+    
+    if (availableCredits < creditsRequired) {
       return res.status(400).json({
         success: false,
-        message: 'Insufficient coin balance',
-        required: coinAmount,
-        available: user.coinBalance
+        message: 'Insufficient credits balance',
+        required: creditsRequired,
+        available: availableCredits
       });
     }
     
@@ -314,7 +316,7 @@ router.post('/create', authenticateToken, async (req, res) => {
     const withdrawal = new RazorpayWithdrawal({
       userId,
       amount,
-      coinAmount,
+      coinAmount: creditsRequired,
       withdrawalMethod,
       payoutDetails,
       requestIp: req.ip,
@@ -333,15 +335,22 @@ router.post('/create', authenticateToken, async (req, res) => {
     
     await withdrawal.save();
     
-    // Deduct coins from user balance (hold them)
+    // Deduct credits from user balance (hold them)
+    const updateQuery = {};
+    if (user.creditsReady) {
+      updateQuery.creditsReady = -creditsRequired;
+    } else {
+      updateQuery.availableCredits = -creditsRequired;
+    }
+    
     await User.findByIdAndUpdate(userId, {
-      $inc: { coinBalance: -coinAmount }
+      $inc: updateQuery
     });
     
     // Create coin transaction record
     const coinTransaction = new Coin({
       userId,
-      amount: -coinAmount,
+      amount: -creditsRequired,
       type: 'spent',
       source: 'withdrawal_request',
       description: `Withdrawal request - ${withdrawalMethod} - ₹${amount}`,
