@@ -1,0 +1,37 @@
+name: Keep Render Backend Alive
+
+on:
+  schedule:
+    # Run every 14 minutes to prevent 15-minute timeout
+    - cron: '*/14 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  ping-backend:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Ping Backend Health Endpoint
+        run: |
+          echo "Pinging backend to keep it alive..."
+          
+          # Replace YOUR_RENDER_URL with your actual Render backend URL
+          BACKEND_URL="${{ secrets.RENDER_BACKEND_URL || 'https://taskvip.onrender.com' }}"
+          
+          # Ping the health endpoint
+          response=$(curl -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/api/health" || echo "000")
+          
+          if [ "$response" = "200" ]; then
+            echo "✅ Backend is alive! Response code: $response"
+            echo "Timestamp: $(date)"
+          else
+            echo "❌ Backend health check failed! Response code: $response"
+            echo "Timestamp: $(date)"
+            # Don't fail the workflow, just log the issue
+          fi
+          
+      - name: Log Keep-Alive Activity
+        run: |
+          echo "Keep-alive ping completed at $(date)"
+          echo "Next ping scheduled in 14 minutes"
+

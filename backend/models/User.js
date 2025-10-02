@@ -144,9 +144,7 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Indexes for better performance
-userSchema.index({ email: 1 });
-userSchema.index({ referralCode: 1 });
+// Indexes for better performance (email and referralCode already have unique indexes)
 userSchema.index({ referredBy: 1 });
 userSchema.index({ vipLevel: 1 });
 userSchema.index({ createdAt: -1 });

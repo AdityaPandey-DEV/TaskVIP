@@ -87,10 +87,9 @@ const vipPurchaseSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Indexes for better performance
+// Indexes for better performance (transactionId already has unique index)
 vipPurchaseSchema.index({ userId: 1, createdAt: -1 });
 vipPurchaseSchema.index({ status: 1 });
-vipPurchaseSchema.index({ transactionId: 1 });
 vipPurchaseSchema.index({ paymentId: 1 });
 vipPurchaseSchema.index({ endDate: 1 });
 

@@ -43,8 +43,7 @@ const emailVerificationSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Indexes for better performance
-emailVerificationSchema.index({ token: 1 });
+// Indexes for better performance (token already has unique index)
 emailVerificationSchema.index({ userId: 1, type: 1 });
 emailVerificationSchema.index({ status: 1, expiresAt: 1 });
 emailVerificationSchema.index({ email: 1, type: 1 });

@@ -1,0 +1,17 @@
+{
+  "services": [
+    {
+      "name": "TaskVIP Backend",
+      "url": "https://taskvip.onrender.com",
+      "healthEndpoint": "/api/health",
+      "description": "Main TaskVIP backend service on Render"
+    }
+  ],
+  "settings": {
+    "pingInterval": "14 minutes",
+    "timeout": 30,
+    "retryAttempts": 3,
+    "retryDelay": 10
+  }
+}
+

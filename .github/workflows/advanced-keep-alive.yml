@@ -1,0 +1,84 @@
+name: Advanced Keep Render Alive
+
+on:
+  schedule:
+    # Run every 14 minutes (Render free tier spins down after 15 minutes)
+    - cron: '*/14 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+env:
+  # Set your Render backend URL here or use repository secrets
+  BACKEND_URL: ${{ secrets.RENDER_BACKEND_URL || 'https://taskvip.onrender.com' }}
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Check Backend Health
+        id: health-check
+        run: |
+          echo "🏥 Checking backend health..."
+          echo "Backend URL: $BACKEND_URL"
+          echo "Timestamp: $(date)"
+          
+          # Health check with timeout
+          response=$(curl -s -m 30 -o /dev/null -w "%{http_code}" "$BACKEND_URL/api/health" || echo "000")
+          
+          echo "response=$response" >> $GITHUB_OUTPUT
+          
+          if [ "$response" = "200" ]; then
+            echo "✅ Backend is healthy! Response code: $response"
+          else
+            echo "⚠️ Backend health check returned: $response"
+          fi
+
+      - name: Wake Up Backend (if needed)
+        if: steps.health-check.outputs.response != '200'
+        run: |
+          echo "🚀 Attempting to wake up backend..."
+          
+          # Try multiple endpoints to wake up the service
+          endpoints=("/api/health" "/" "/api/stats")
+          
+          for endpoint in "${endpoints[@]}"; do
+            echo "Trying endpoint: $endpoint"
+            response=$(curl -s -m 30 -o /dev/null -w "%{http_code}" "$BACKEND_URL$endpoint" || echo "000")
+            echo "Response: $response"
+            
+            if [ "$response" = "200" ]; then
+              echo "✅ Backend woke up successfully!"
+              break
+            fi
+            
+            # Wait 10 seconds between attempts
+            sleep 10
+          done
+
+      - name: Final Health Verification
+        run: |
+          echo "🔍 Final health verification..."
+          
+          # Final check after wake-up attempts
+          response=$(curl -s -m 30 -o /dev/null -w "%{http_code}" "$BACKEND_URL/api/health" || echo "000")
+          
+          if [ "$response" = "200" ]; then
+            echo "✅ Backend is now active and healthy!"
+            echo "Keep-alive successful at $(date)"
+          else
+            echo "❌ Backend still not responding properly"
+            echo "This might indicate a service issue"
+          fi
+          
+          echo "Next keep-alive check in 14 minutes"
+
+      - name: Log Activity
+        if: always()
+        run: |
+          echo "📊 Keep-Alive Summary:"
+          echo "- Execution time: $(date)"
+          echo "- Backend URL: $BACKEND_URL"
+          echo "- Workflow: ${{ github.workflow }}"
+          echo "- Run ID: ${{ github.run_id }}"
+
