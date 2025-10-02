@@ -213,17 +213,37 @@ referralSchema.statics.getTopReferrers = async function(limit = 10, startDate, e
 
 // Static method to check if referral is valid
 referralSchema.statics.isValidReferral = async function(referralCode, referredUserId) {
-  // Check if user is trying to refer themselves
+  console.log(`isValidReferral called with code: ${referralCode}, userId: ${referredUserId}`);
+  
+  // Check if referral code exists
   const referrer = await mongoose.model('User').findOne({ referralCode });
-  if (!referrer) return false;
+  console.log(`Referrer found for code ${referralCode}:`, referrer ? `${referrer.firstName} ${referrer.lastName}` : 'null');
+  
+  if (!referrer) {
+    console.log(`No referrer found for code: ${referralCode}`);
+    return false;
+  }
+  
+  // If no referredUserId provided (e.g., during Google OAuth validation), just check if code exists
+  if (!referredUserId) {
+    console.log(`No referredUserId provided, code ${referralCode} is valid`);
+    return true;
+  }
   
   // Check if user is already referred
   const existingReferral = await this.findOne({ referred: referredUserId });
-  if (existingReferral) return false;
+  if (existingReferral) {
+    console.log(`User ${referredUserId} already has a referral`);
+    return false;
+  }
   
   // Check if user is trying to refer themselves
-  if (referrer._id.toString() === referredUserId.toString()) return false;
+  if (referrer._id.toString() === referredUserId.toString()) {
+    console.log(`User ${referredUserId} trying to refer themselves`);
+    return false;
+  }
   
+  console.log(`Referral code ${referralCode} is valid for user ${referredUserId}`);
   return true;
 };
 
