@@ -41,7 +41,7 @@ export default function LoginPage() {
     setGoogleLoading(true)
     try {
       // Initialize Google Sign-In
-      if (typeof window !== 'undefined' && window.google) {
+      if (typeof window !== 'undefined' && window.google && process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
         window.google.accounts.id.initialize({
           client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
           callback: handleGoogleCallback
@@ -49,7 +49,7 @@ export default function LoginPage() {
         
         window.google.accounts.id.prompt()
       } else {
-        throw new Error('Google Sign-In not available')
+        throw new Error('Google Sign-In not available. Please check configuration.')
       }
     } catch (error) {
       console.error('Google Sign-In error:', error)
