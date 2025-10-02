@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const { authenticateToken } = require('../middleware/auth');
 const User = require('../models/User');
 const Coin = require('../models/Coin');
@@ -27,7 +28,7 @@ router.get('/tasks', authenticateToken, async (req, res) => {
 
     // Get user's completions today
     const todayCompletions = await OfferCompletion.find({
-      userId,
+      userId: new mongoose.Types.ObjectId(userId),
       createdAt: { $gte: today, $lt: tomorrow }
     });
 
@@ -126,7 +127,7 @@ router.post('/complete/:taskId', authenticateToken, async (req, res) => {
 
     // Check daily limits
     const todayCompletions = await OfferCompletion.find({
-      userId,
+      userId: new mongoose.Types.ObjectId(userId),
       createdAt: { $gte: today, $lt: tomorrow }
     });
 
@@ -176,7 +177,7 @@ router.post('/complete/:taskId', authenticateToken, async (req, res) => {
     const todayCoins = await Coin.aggregate([
       {
         $match: {
-          userId: userId,
+          userId: new mongoose.Types.ObjectId(userId),
           createdAt: { $gte: today, $lt: tomorrow },
           status: 'completed'
         }
@@ -203,23 +204,31 @@ router.post('/complete/:taskId', authenticateToken, async (req, res) => {
     // Create offer completion record
     const completion = new OfferCompletion({
       userId,
-      offerId: null, // For system tasks
+      offerId: new mongoose.Types.ObjectId(), // Generate a dummy ObjectId for system tasks
+      network: getNetworkFromTaskType(taskDef.type),
       status: 'completed',
-      rewardCoins: actualReward,
-      completionTime: new Date(),
-      ipAddress: req.ip,
-      userAgent: req.get('User-Agent'),
-      deviceInfo: {
-        platform: 'web',
-        source: 'reward_system'
+      coinsEarned: actualReward,
+      externalTransactionId: `system_${taskId}_${Date.now()}`,
+      conversionData: {
+        startedAt: new Date(),
+        completedAt: new Date(),
+        verifiedAt: new Date(),
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        deviceId: 'web_browser',
+        referrer: 'system_task'
       },
-      fraudScore: 0, // System tasks are trusted
+      fraudCheck: {
+        score: 0, // System tasks are trusted
+        verified: true
+      },
       metadata: {
         taskId,
         taskType: taskDef.type,
         taskTitle: taskDef.title,
         vipMultiplier,
-        baseReward: taskDef.coinReward
+        baseReward: taskDef.coinReward,
+        isSystemTask: true
       }
     });
 
@@ -294,6 +303,16 @@ function getTransactionType(taskType) {
     case 'adgate_survey': return 'earned_adgate_offer';
     case 'daily_bonus': return 'earned_daily_bonus';
     default: return 'earned_other';
+  }
+}
+
+function getNetworkFromTaskType(taskType) {
+  switch (taskType) {
+    case 'admob_video': return 'admob';
+    case 'cpalead_offer': return 'cpalead';
+    case 'adgate_survey': return 'adgate';
+    case 'daily_bonus': return 'admob'; // Use admob as default for system tasks
+    default: return 'admob';
   }
 }
 
