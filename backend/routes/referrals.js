@@ -106,7 +106,7 @@ router.get('/list', authenticateToken, async (req, res) => {
     if (status) query.status = status;
 
     const referrals = await Referral.find(query)
-      .populate('referred', 'firstName lastName email phone vipLevel createdAt')
+      .populate('referred', 'firstName lastName email vipLevel createdAt')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -120,7 +120,6 @@ router.get('/list', authenticateToken, async (req, res) => {
           id: ref.referred._id,
           name: `${ref.referred.firstName} ${ref.referred.lastName}`,
           email: ref.referred.email,
-          phone: ref.referred.phone,
           vipLevel: ref.referred.vipLevel,
           joinedAt: ref.referred.createdAt
         },

@@ -24,11 +24,6 @@ const userSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  phone: {
-    type: String,
-    required: true,
-    unique: true
-  },
   referralCode: {
     type: String,
     unique: true,
@@ -187,7 +182,6 @@ userSchema.statics.ensureDefaultReferralUser = async function() {
         firstName: 'TaskVIP',
         lastName: 'System',
         email: 'system@taskvip.com',
-        phone: '+919999999999',
         password: 'system123456', // This will be hashed
         referralCode: '0000',
         vipLevel: 3, // Max VIP level

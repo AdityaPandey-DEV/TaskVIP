@@ -25,7 +25,6 @@ router.get('/profile', authenticateToken, async (req, res) => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        phone: user.phone,
         referralCode: user.referralCode,
         vipLevel: user.vipLevel,
         vipExpiry: user.vipExpiry,
@@ -56,7 +55,6 @@ router.get('/profile', authenticateToken, async (req, res) => {
 router.put('/profile', authenticateToken, [
   body('firstName').optional().trim().isLength({ min: 2 }),
   body('lastName').optional().trim().isLength({ min: 2 }),
-  body('phone').optional().isMobilePhone('en-IN')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -67,12 +65,11 @@ router.put('/profile', authenticateToken, [
       });
     }
 
-    const { firstName, lastName, phone } = req.body;
+    const { firstName, lastName } = req.body;
     const updateData = {};
 
     if (firstName) updateData.firstName = firstName;
     if (lastName) updateData.lastName = lastName;
-    if (phone) updateData.phone = phone;
 
     const user = await User.findByIdAndUpdate(
       req.user._id,
@@ -91,7 +88,6 @@ router.put('/profile', authenticateToken, [
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        phone: user.phone,
         referralCode: user.referralCode,
         vipLevel: user.vipLevel,
         vipExpiry: user.vipExpiry,

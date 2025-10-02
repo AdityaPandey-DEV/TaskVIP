@@ -12,7 +12,6 @@ db.createCollection('adminlogs');
 // Create indexes for better performance
 db.users.createIndex({ email: 1 }, { unique: true });
 db.users.createIndex({ referralCode: 1 }, { unique: true });
-db.users.createIndex({ phone: 1 }, { unique: true });
 db.users.createIndex({ vipLevel: 1 });
 db.users.createIndex({ createdAt: -1 });
 

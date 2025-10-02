@@ -230,7 +230,6 @@ router.get('/users', authenticateAdmin, async (req, res) => {
         { email: { $regex: search, $options: 'i' } },
         { firstName: { $regex: search, $options: 'i' } },
         { lastName: { $regex: search, $options: 'i' } },
-        { phone: { $regex: search, $options: 'i' } }
       ];
     }
     if (vipLevel !== undefined) query.vipLevel = parseInt(vipLevel);
@@ -254,7 +253,6 @@ router.get('/users', authenticateAdmin, async (req, res) => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        phone: user.phone,
         vipLevel: user.vipLevel,
         vipExpiry: user.vipExpiry,
         isVipActive: user.isVipActive(),
@@ -315,7 +313,6 @@ router.get('/users/:userId', authenticateAdmin, async (req, res) => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        phone: user.phone,
         referralCode: user.referralCode,
         vipLevel: user.vipLevel,
         vipExpiry: user.vipExpiry,
@@ -349,7 +346,6 @@ router.put('/users/:userId', authenticateAdmin, logAdminAction('user_updated', '
   body('firstName').optional().trim(),
   body('lastName').optional().trim(),
   body('email').optional().isEmail(),
-  body('phone').optional().isMobilePhone('en-IN'),
   body('vipLevel').optional().isInt({ min: 0, max: 3 }),
   body('kycStatus').optional().isIn(['pending', 'verified', 'rejected']),
   body('isActive').optional().isBoolean()
@@ -376,7 +372,6 @@ router.put('/users/:userId', authenticateAdmin, logAdminAction('user_updated', '
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
-      phone: user.phone,
       vipLevel: user.vipLevel,
       kycStatus: user.kycStatus,
       isActive: user.isActive
@@ -398,7 +393,6 @@ router.put('/users/:userId', authenticateAdmin, logAdminAction('user_updated', '
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        phone: user.phone,
         vipLevel: user.vipLevel,
         kycStatus: user.kycStatus,
         isActive: user.isActive

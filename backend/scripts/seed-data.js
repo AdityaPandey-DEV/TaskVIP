@@ -29,7 +29,6 @@ const seedData = async () => {
       password: 'admin123',
       firstName: 'Admin',
       lastName: 'User',
-      phone: '+919876543210',
       vipLevel: 3,
       vipExpiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
       totalCredits: 10000,
@@ -48,7 +47,6 @@ const seedData = async () => {
         password: 'password123',
         firstName: `User${i}`,
         lastName: 'Test',
-        phone: `+9198765432${i.toString().padStart(2, '0')}`,
         vipLevel: i <= 3 ? 1 : i <= 6 ? 2 : i <= 8 ? 3 : 0,
         vipExpiry: i <= 8 ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null,
         totalCredits: Math.floor(Math.random() * 1000) + 100,

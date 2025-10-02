@@ -24,7 +24,6 @@ router.post('/register', [
   body('password').isLength({ min: 6 }),
   body('firstName').trim().isLength({ min: 2 }),
   body('lastName').trim().isLength({ min: 2 }),
-  body('phone').isMobilePhone('en-IN'),
   body('referralCode').optional().trim()
 ], async (req, res) => {
   try {
@@ -36,19 +35,17 @@ router.post('/register', [
       });
     }
 
-    const { email, password, firstName, lastName, phone, referralCode } = req.body;
+    const { email, password, firstName, lastName, referralCode } = req.body;
 
     // Use default referral code "0000" if none provided
     const finalReferralCode = referralCode || '0000';
 
     // Check if user already exists
-    const existingUser = await User.findOne({ 
-      $or: [{ email }, { phone }] 
-    });
+    const existingUser = await User.findOne({ email });
     
     if (existingUser) {
       return res.status(400).json({ 
-        message: 'User already exists with this email or phone number' 
+        message: 'User already exists with this email' 
       });
     }
 
@@ -66,7 +63,6 @@ router.post('/register', [
       password,
       firstName,
       lastName,
-      phone,
       deviceInfo: {
         ip: req.ip,
         userAgent: req.get('User-Agent'),
@@ -206,7 +202,6 @@ router.get('/me', authenticateToken, async (req, res) => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        phone: user.phone,
         referralCode: user.referralCode,
         vipLevel: user.vipLevel,
         vipExpiry: user.vipExpiry,
@@ -238,7 +233,6 @@ router.get('/me', authenticateToken, async (req, res) => {
 router.put('/profile', authenticateToken, [
   body('firstName').optional().trim().isLength({ min: 2 }),
   body('lastName').optional().trim().isLength({ min: 2 }),
-  body('phone').optional().isMobilePhone('en-IN')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -249,19 +243,11 @@ router.put('/profile', authenticateToken, [
       });
     }
 
-    const { firstName, lastName, phone } = req.body;
+    const { firstName, lastName } = req.body;
     const user = await User.findById(req.user._id);
 
     if (firstName) user.firstName = firstName;
     if (lastName) user.lastName = lastName;
-    if (phone) {
-      // Check if phone is already taken
-      const existingUser = await User.findOne({ phone, _id: { $ne: user._id } });
-      if (existingUser) {
-        return res.status(400).json({ message: 'Phone number already in use' });
-      }
-      user.phone = phone;
-    }
 
     await user.save();
 
@@ -272,7 +258,6 @@ router.put('/profile', authenticateToken, [
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        phone: user.phone,
         referralCode: user.referralCode
       }
     });
@@ -456,7 +441,6 @@ router.post('/google', async (req, res) => {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
-          phone: user.phone,
           referralCode: user.referralCode,
           vipLevel: user.vipLevel,
           vipExpiry: user.vipExpiry,
@@ -475,7 +459,6 @@ router.post('/google', async (req, res) => {
         email: email.toLowerCase(),
         firstName: given_name || 'User',
         lastName: family_name || '',
-        phone: '', // Phone not required for Google sign-up
         password: 'google-oauth', // Placeholder password for Google users
         isEmailVerified: true, // Google emails are pre-verified
         profilePicture: picture,
@@ -506,7 +489,6 @@ router.post('/google', async (req, res) => {
           email: newUser.email,
           firstName: newUser.firstName,
           lastName: newUser.lastName,
-          phone: newUser.phone,
           referralCode: newUser.referralCode,
           vipLevel: newUser.vipLevel,
           vipExpiry: newUser.vipExpiry,
