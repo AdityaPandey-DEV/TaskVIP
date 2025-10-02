@@ -1,15 +1,21 @@
 'use client'
 
 import { useEffect } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 
-// Banner Ad Component - High visibility with viewing time tracking
+// Banner Ad Component - High visibility with viewing time tracking (Authenticated users only)
 export function BannerAd({ zone = "175243", className = "", minViewTime = 3000, reward = 2 }: { 
   zone?: string, 
   className?: string,
   minViewTime?: number,
   reward?: number 
 }) {
+  const { user, loading } = useAuth()
+
   useEffect(() => {
+    // Only load ads for authenticated users
+    if (!user || loading) return
+
     // Reload ads when component mounts
     if (typeof window !== 'undefined' && (window as any).adsbygoogle) {
       try {
@@ -38,7 +44,19 @@ export function BannerAd({ zone = "175243", className = "", minViewTime = 3000, 
       
       return () => observer.disconnect()
     }
-  }, [zone, minViewTime])
+  }, [zone, minViewTime, user, loading])
+
+  // Don't show ads for non-authenticated users
+  if (!user || loading) {
+    return (
+      <div className={`ad-placeholder ${className}`}>
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-lg text-center">
+          <h3 className="font-semibold mb-2">🎯 Unlock Premium Ads!</h3>
+          <p className="text-sm">Sign in to view ads and start earning credits!</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={`ad-banner ${className}`}>
@@ -58,8 +76,23 @@ export function BannerAd({ zone = "175243", className = "", minViewTime = 3000, 
   )
 }
 
-// Sidebar Ad Component - Persistent visibility
+// Sidebar Ad Component - Persistent visibility (Authenticated users only)
 export function SidebarAd({ zone = "175243", className = "" }: { zone?: string, className?: string }) {
+  const { user, loading } = useAuth()
+
+  // Don't show ads for non-authenticated users
+  if (!user || loading) {
+    return (
+      <div className={`ad-sidebar ${className}`}>
+        <div className="bg-gradient-to-b from-green-500 to-blue-600 text-white p-4 rounded-lg text-center sticky top-4">
+          <h3 className="font-semibold mb-2">💎 VIP Ads</h3>
+          <p className="text-sm mb-3">Premium ad content available after sign in</p>
+          <div className="text-xs opacity-80">Sign in to unlock earning opportunities!</div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={`ad-sidebar ${className}`}>
       <div 
@@ -75,8 +108,22 @@ export function SidebarAd({ zone = "175243", className = "" }: { zone?: string, 
   )
 }
 
-// Inline Ad Component - Between content
+// Inline Ad Component - Between content (Authenticated users only)
 export function InlineAd({ zone = "175243", className = "" }: { zone?: string, className?: string }) {
+  const { user, loading } = useAuth()
+
+  // Don't show ads for non-authenticated users
+  if (!user || loading) {
+    return (
+      <div className={`ad-inline my-4 ${className}`}>
+        <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-3 rounded-lg text-center">
+          <h4 className="font-semibold mb-1">🚀 Earning Zone</h4>
+          <p className="text-sm">Sign in to view ads and earn credits!</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={`ad-inline my-4 ${className}`}>
       <div className="text-center text-gray-400 text-xs mb-1">Advertisement</div>
@@ -108,14 +155,19 @@ export function PopupAd({ zone = "175243", delay = 30000 }: { zone?: string, del
   return null // Popup ads are handled by the main script
 }
 
-// Video Ad Component - High value with optimal viewing tracking
+// Video Ad Component - High value with optimal viewing tracking (Authenticated users only)
 export function VideoAd({ zone = "175243", className = "", minViewTime = 5000, reward = 5 }: { 
   zone?: string, 
   className?: string,
   minViewTime?: number,
   reward?: number 
 }) {
+  const { user, loading } = useAuth()
+
   useEffect(() => {
+    // Only track for authenticated users
+    if (!user || loading) return
+
     // Track video ad viewing for maximum earnings
     const videoAdElement = document.getElementById(`ad-video-${zone}`)
     if (videoAdElement) {
@@ -134,7 +186,20 @@ export function VideoAd({ zone = "175243", className = "", minViewTime = 5000, r
       observer.observe(videoAdElement)
       return () => observer.disconnect()
     }
-  }, [zone, minViewTime])
+  }, [zone, minViewTime, user, loading])
+
+  // Don't show ads for non-authenticated users
+  if (!user || loading) {
+    return (
+      <div className={`ad-video ${className}`}>
+        <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white p-4 rounded-lg text-center">
+          <h3 className="font-semibold mb-2">🎬 Premium Video Ads</h3>
+          <p className="text-sm mb-2">High-value video ads = {reward} Credits each</p>
+          <p className="text-xs opacity-90">Sign in to unlock video earning opportunities!</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={`ad-video ${className}`}>
@@ -157,8 +222,23 @@ export function VideoAd({ zone = "175243", className = "", minViewTime = 5000, r
   )
 }
 
-// Native Ad Component - Blends with content
+// Native Ad Component - Blends with content (Authenticated users only)
 export function NativeAd({ zone = "175243", className = "" }: { zone?: string, className?: string }) {
+  const { user, loading } = useAuth()
+
+  // Don't show ads for non-authenticated users
+  if (!user || loading) {
+    return (
+      <div className={`ad-native ${className}`}>
+        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-4 border border-gray-200 rounded-lg">
+          <div className="text-xs opacity-80 mb-2">Premium Content</div>
+          <h4 className="font-semibold mb-2">🌟 Native Ads Available</h4>
+          <p className="text-sm">Sign in to view native ads and earn credits seamlessly!</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={`ad-native ${className}`}>
       <div 
