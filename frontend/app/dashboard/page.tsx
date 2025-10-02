@@ -262,6 +262,26 @@ export default function DashboardPage() {
     }
   }
 
+  const migrateUserData = async () => {
+    try {
+      const response = await apiRequest('api/stats/migrate-user-data', {
+        method: 'POST',
+        headers: getAuthHeaders()
+      })
+      const data = await response.json()
+      console.log('Migration data:', data)
+      if (response.ok) {
+        alert('✅ Data migrated successfully! Your existing credits and activity have been transferred to the new stats system. Refresh the page to see updated stats.')
+        fetchDashboardData() // Refresh data
+      } else {
+        alert('Failed to migrate: ' + data.message)
+      }
+    } catch (error) {
+      console.error('Migration error:', error)
+      alert('Error migrating data')
+    }
+  }
+
   // Show loading screen while checking authentication
   if (loading) {
     return (
@@ -448,6 +468,12 @@ export default function DashboardPage() {
                 className="px-3 py-1 bg-orange-600 text-white text-xs rounded hover:bg-orange-700"
               >
                 Check User
+              </button>
+              <button 
+                onClick={migrateUserData}
+                className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+              >
+                Migrate Data
               </button>
               
               {user.vipLevel > 0 && (

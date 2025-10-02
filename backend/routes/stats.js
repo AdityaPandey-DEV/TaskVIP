@@ -424,6 +424,176 @@ router.get('/dashboard-v2', authenticateToken, async (req, res) => {
   }
 });
 
+// @route   POST /api/stats/migrate-user-data
+// @desc    Migrate existing Credit/Coin data to User model stats
+// @access  Private
+router.post('/migrate-user-data', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    console.log('🔄 Migrating user data for:', userId);
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get existing credit data
+    const availableCredits = await Credit.getUserAvailableCredits(userId);
+    const totalCredits = await Credit.getUserTotalCredits(userId);
+    
+    // Get today's credits earned
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todayCredits = await Credit.aggregate([
+      {
+        $match: {
+          userId: new require('mongoose').Types.ObjectId(userId),
+          createdAt: { $gte: today, $lt: tomorrow },
+          amount: { $gt: 0 }
+        }
+      },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+    const dailyCreditsEarned = todayCredits.length > 0 ? todayCredits[0].total : 0;
+
+    // Get coin statistics
+    const coinStats = await Coin.aggregate([
+      { $match: { userId: new require('mongoose').Types.ObjectId(userId), status: 'completed' } },
+      {
+        $group: {
+          _id: '$type',
+          total: { $sum: '$amount' },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const totalCoinsEarned = coinStats
+      .filter(stat => stat._id === 'earned')
+      .reduce((sum, stat) => sum + stat.total, 0);
+
+    // Get task completion statistics
+    const completedTasks = await Credit.countDocuments({
+      userId,
+      type: { $in: ['task_completion', 'ad_watch', 'survey_completion'] },
+      status: 'vested'
+    });
+
+    const totalTasks = await Credit.countDocuments({
+      userId,
+      type: { $in: ['task_completion', 'ad_watch', 'survey_completion'] }
+    });
+
+    // Calculate streak (consecutive days with activity)
+    let streak = 0;
+    const checkDate = new Date();
+    checkDate.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < 30; i++) { // Check up to 30 days
+      const dayStart = new Date(checkDate);
+      const dayEnd = new Date(checkDate);
+      dayEnd.setDate(dayEnd.getDate() + 1);
+
+      const hasActivity = await Credit.countDocuments({
+        userId,
+        createdAt: { $gte: dayStart, $lt: dayEnd },
+        amount: { $gt: 0 }
+      });
+
+      if (hasActivity > 0) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+
+    // Calculate days active (total days with any activity)
+    const daysActiveResult = await Credit.aggregate([
+      {
+        $match: {
+          userId: new require('mongoose').Types.ObjectId(userId),
+          amount: { $gt: 0 }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' },
+            day: { $dayOfMonth: '$createdAt' }
+          }
+        }
+      },
+      { $count: 'totalDays' }
+    ]);
+    const daysActive = daysActiveResult.length > 0 ? daysActiveResult[0].totalDays : 0;
+
+    // Update User model with migrated data
+    user.creditsReady = availableCredits;
+    user.totalEarned = totalCredits; // Total credits earned (available + withdrawn)
+    user.totalWithdrawn = Math.max(0, totalCredits - availableCredits); // Estimate withdrawn
+    user.coinBalance = user.coinBalance || 0; // Keep existing coin balance
+    user.dailyCreditsEarned = dailyCreditsEarned;
+    user.dailyProgress = Math.min((dailyCreditsEarned / user.getDailyCreditLimit()) * 100, 100);
+    user.daysActive = daysActive;
+    user.currentStreak = streak;
+    user.totalTasksAssigned = totalTasks;
+    user.totalTasksCompleted = completedTasks;
+    
+    // Initialize referral stats (will be populated when referrals are processed)
+    user.totalDirectReferrals = user.totalDirectReferrals || 0;
+    user.totalIndirectReferrals = user.totalIndirectReferrals || 0;
+    user.totalDeepReferrals = user.totalDeepReferrals || 0;
+    user.totalReferralEarnings = user.totalReferralEarnings || 0;
+
+    await user.save();
+
+    console.log('✅ User data migrated successfully:', {
+      creditsReady: user.creditsReady,
+      totalEarned: user.totalEarned,
+      daysActive: user.daysActive,
+      currentStreak: user.currentStreak
+    });
+
+    res.json({
+      message: 'User data migrated successfully from existing records!',
+      migratedData: {
+        creditsReady: user.creditsReady,
+        totalEarned: user.totalEarned,
+        totalWithdrawn: user.totalWithdrawn,
+        coinBalance: user.coinBalance,
+        dailyCreditsEarned: user.dailyCreditsEarned,
+        dailyProgress: user.dailyProgress,
+        daysActive: user.daysActive,
+        currentStreak: user.currentStreak,
+        totalTasksAssigned: user.totalTasksAssigned,
+        totalTasksCompleted: user.totalTasksCompleted
+      },
+      sourceData: {
+        availableCredits,
+        totalCredits,
+        dailyCreditsEarned,
+        totalCoinsEarned,
+        completedTasks,
+        totalTasks,
+        streak,
+        daysActive
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Migration error:', error);
+    res.status(500).json({ 
+      message: 'Failed to migrate user data',
+      error: error.message 
+    });
+  }
+});
+
 // @route   POST /api/stats/seed-test-data
 // @desc    Add test data for user (development only)
 // @access  Private
