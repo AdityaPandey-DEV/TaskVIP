@@ -3,7 +3,7 @@ const Razorpay = require('razorpay');
 const RazorpayWithdrawal = require('../models/RazorpayWithdrawal');
 const User = require('../models/User');
 const Coin = require('../models/Coin');
-const auth = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
 // Initialize Razorpay
@@ -13,7 +13,7 @@ const razorpay = new Razorpay({
 });
 
 // Get withdrawal methods and their fees
-router.get('/methods', auth, async (req, res) => {
+router.get('/methods', authenticateToken, async (req, res) => {
   try {
     const methods = [
       {
@@ -94,7 +94,7 @@ router.get('/methods', auth, async (req, res) => {
 });
 
 // Create withdrawal request
-router.post('/create', auth, async (req, res) => {
+router.post('/create', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { amount, withdrawalMethod, payoutDetails } = req.body;
@@ -215,7 +215,7 @@ router.post('/create', auth, async (req, res) => {
 });
 
 // Get user's withdrawal history
-router.get('/history', auth, async (req, res) => {
+router.get('/history', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { page = 1, limit = 20, status = 'all' } = req.query;
@@ -274,7 +274,7 @@ router.get('/history', auth, async (req, res) => {
 });
 
 // Get withdrawal statistics
-router.get('/stats', auth, async (req, res) => {
+router.get('/stats', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { startDate, endDate } = req.query;
@@ -300,7 +300,7 @@ router.get('/stats', auth, async (req, res) => {
 });
 
 // Cancel withdrawal request
-router.post('/cancel/:withdrawalId', auth, async (req, res) => {
+router.post('/cancel/:withdrawalId', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { withdrawalId } = req.params;
@@ -364,7 +364,7 @@ router.post('/cancel/:withdrawalId', auth, async (req, res) => {
 });
 
 // Admin: Process pending withdrawals
-router.post('/admin/process-pending', auth, async (req, res) => {
+router.post('/admin/process-pending', authenticateToken, async (req, res) => {
   try {
     // Check if user is admin (you should implement proper admin check)
     if (req.user.role !== 'admin') {

@@ -3,11 +3,11 @@ const AppInstall = require('../models/AppInstall');
 const AppDatabase = require('../models/AppDatabase');
 const User = require('../models/User');
 const { MultiLevelReferral } = require('../models/MultiLevelReferral');
-const auth = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
 // Get available apps for installation
-router.get('/available', auth, async (req, res) => {
+router.get('/available', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { platform = 'android', category = 'all', limit = 20, country = 'US' } = req.query;
@@ -65,7 +65,7 @@ router.get('/available', auth, async (req, res) => {
 });
 
 // Get promoted apps
-router.get('/promoted', auth, async (req, res) => {
+router.get('/promoted', authenticateToken, async (req, res) => {
   try {
     const { platform = 'android', limit = 10 } = req.query;
     
@@ -86,7 +86,7 @@ router.get('/promoted', auth, async (req, res) => {
 });
 
 // Start app installation task
-router.post('/start', auth, async (req, res) => {
+router.post('/start', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { appId, platform = 'android' } = req.body;
@@ -196,7 +196,7 @@ router.post('/start', auth, async (req, res) => {
 });
 
 // Mark app as installed
-router.post('/installed/:taskId', auth, async (req, res) => {
+router.post('/installed/:taskId', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { taskId } = req.params;
@@ -251,7 +251,7 @@ router.post('/installed/:taskId', auth, async (req, res) => {
 });
 
 // Mark app as opened
-router.post('/opened/:taskId', auth, async (req, res) => {
+router.post('/opened/:taskId', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { taskId } = req.params;
@@ -300,7 +300,7 @@ router.post('/opened/:taskId', auth, async (req, res) => {
 });
 
 // Complete app installation task
-router.post('/complete/:taskId', auth, async (req, res) => {
+router.post('/complete/:taskId', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { taskId } = req.params;
@@ -376,7 +376,7 @@ router.post('/complete/:taskId', auth, async (req, res) => {
 });
 
 // Get user's install tasks
-router.get('/tasks', auth, async (req, res) => {
+router.get('/tasks', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { status = 'all', page = 1, limit = 20 } = req.query;
@@ -426,7 +426,7 @@ router.get('/tasks', auth, async (req, res) => {
 });
 
 // Get install statistics
-router.get('/stats', auth, async (req, res) => {
+router.get('/stats', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     
@@ -447,7 +447,7 @@ router.get('/stats', auth, async (req, res) => {
 });
 
 // Cancel install task
-router.post('/cancel/:taskId', auth, async (req, res) => {
+router.post('/cancel/:taskId', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { taskId } = req.params;
@@ -482,7 +482,7 @@ router.post('/cancel/:taskId', auth, async (req, res) => {
 });
 
 // Admin: Seed sample apps
-router.post('/admin/seed-apps', auth, async (req, res) => {
+router.post('/admin/seed-apps', authenticateToken, async (req, res) => {
   try {
     // Check if user is admin
     if (req.user.role !== 'admin') {
@@ -509,7 +509,7 @@ router.post('/admin/seed-apps', auth, async (req, res) => {
 });
 
 // Admin: Cleanup expired tasks
-router.post('/admin/cleanup-expired', auth, async (req, res) => {
+router.post('/admin/cleanup-expired', authenticateToken, async (req, res) => {
   try {
     // Check if user is admin
     if (req.user.role !== 'admin') {
@@ -536,7 +536,7 @@ router.post('/admin/cleanup-expired', auth, async (req, res) => {
 });
 
 // Get app categories
-router.get('/categories', auth, async (req, res) => {
+router.get('/categories', authenticateToken, async (req, res) => {
   try {
     const categories = [
       { id: 'all', name: 'All Apps', icon: '📱' },

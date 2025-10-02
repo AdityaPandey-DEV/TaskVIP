@@ -2,11 +2,11 @@ const express = require('express');
 const mongoose = require('mongoose');
 const { MultiLevelReferral, Commission } = require('../models/MultiLevelReferral');
 const User = require('../models/User');
-const auth = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
 // Get user's referral statistics
-router.get('/stats', auth, async (req, res) => {
+router.get('/stats', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     
@@ -27,7 +27,7 @@ router.get('/stats', auth, async (req, res) => {
 });
 
 // Get user's referral tree
-router.get('/tree', auth, async (req, res) => {
+router.get('/tree', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     
@@ -88,7 +88,7 @@ router.get('/tree', auth, async (req, res) => {
 });
 
 // Get commission history
-router.get('/commissions', auth, async (req, res) => {
+router.get('/commissions', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { page = 1, limit = 20, status = 'all' } = req.query;
@@ -148,7 +148,7 @@ router.get('/commissions', auth, async (req, res) => {
 });
 
 // Get referral earnings summary
-router.get('/earnings', auth, async (req, res) => {
+router.get('/earnings', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { startDate, endDate } = req.query;
@@ -238,7 +238,7 @@ router.get('/earnings', auth, async (req, res) => {
 });
 
 // Create referral relationship (used during registration)
-router.post('/create', auth, async (req, res) => {
+router.post('/create', authenticateToken, async (req, res) => {
   try {
     const { referralCode, newUserId } = req.body;
     
@@ -266,7 +266,7 @@ router.post('/create', auth, async (req, res) => {
 });
 
 // Process commission payment (internal use)
-router.post('/process-commission', auth, async (req, res) => {
+router.post('/process-commission', authenticateToken, async (req, res) => {
   try {
     const { userId, amount, transactionType, transactionId, metadata } = req.body;
     
@@ -301,7 +301,7 @@ router.post('/process-commission', auth, async (req, res) => {
 });
 
 // Get VIP commission rates
-router.get('/vip-rates', auth, async (req, res) => {
+router.get('/vip-rates', authenticateToken, async (req, res) => {
   try {
     const vipRates = {
       level1: {
@@ -334,7 +334,7 @@ router.get('/vip-rates', auth, async (req, res) => {
 });
 
 // Get leaderboard
-router.get('/leaderboard', auth, async (req, res) => {
+router.get('/leaderboard', authenticateToken, async (req, res) => {
   try {
     const { limit = 50, period = 'all' } = req.query;
     
