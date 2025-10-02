@@ -54,11 +54,16 @@ export default function AdminPage() {
   const [unauthorized, setUnauthorized] = useState(false)
 
   useEffect(() => {
-    if (user) {
-      fetchAdminStats()
-      fetchRecentActivity()
+    if (!loading) {
+      if (user) {
+        fetchAdminStats()
+        fetchRecentActivity()
+      } else {
+        // Redirect to login if not authenticated
+        window.location.href = '/login'
+      }
     }
-  }, [user])
+  }, [user, loading])
 
   const fetchAdminStats = async () => {
     try {
@@ -119,10 +124,14 @@ export default function AdminPage() {
     }).format(amount)
   }
 
-  if (loading || loadingStats) {
+  // Show loading screen while checking authentication
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="loading-spinner"></div>
+        <div className="text-center">
+          <div className="loading-spinner mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
       </div>
     )
   }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import Cookies from 'js-cookie'
 import { 
   Download, 
   CreditCard, 
@@ -65,19 +66,28 @@ export default function WithdrawPage() {
   })
   const [processing, setProcessing] = useState(false)
 
+  // Helper function to get auth headers
+  const getAuthHeaders = () => {
+    const token = Cookies.get('token')
+    return token ? { 'Authorization': `Bearer ${token}` } : {}
+  }
+
   useEffect(() => {
-    if (user) {
-      fetchWithdrawalStatus()
-      fetchPaymentMethods()
+    if (!loading) {
+      if (user) {
+        fetchWithdrawalStatus()
+        fetchPaymentMethods()
+      } else {
+        // Redirect to login if not authenticated
+        window.location.href = '/login'
+      }
     }
-  }, [user])
+  }, [user, loading])
 
   const fetchWithdrawalStatus = async () => {
     try {
       const response = await fetch('/api/withdrawals/status', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        headers: getAuthHeaders()
       })
       if (response.ok) {
         const data = await response.json()
@@ -186,10 +196,14 @@ export default function WithdrawPage() {
     }
   }
 
-  if (loading || loadingStatus) {
+  // Show loading screen while checking authentication
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="loading-spinner"></div>
+        <div className="text-center">
+          <div className="loading-spinner mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
       </div>
     )
   }
