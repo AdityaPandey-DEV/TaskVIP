@@ -12,7 +12,9 @@
     "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "test-keep-alive": "node scripts/test-keep-alive.js",
     "health-check": "cd backend && node healthcheck.js",
-    "generate-env": "node scripts/generate-env-vars.js"
+    "generate-env": "node scripts/generate-env-vars.js",
+    "setup-frontend": "node scripts/setup-frontend-env.js",
+    "setup-frontend-prod": "node scripts/setup-frontend-env.js --production"
   },
   "keywords": ["referral", "earn", "vip", "tasks", "rewards"],
   "author": "TaskVIP Team",
