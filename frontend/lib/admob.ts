@@ -191,16 +191,22 @@ const showMockAdExperience = (): Promise<boolean> => {
           position: relative;
           overflow: hidden;
         ">
-          <!-- Actual Video Element -->
-          <video id="adVideo" style="
+          <!-- Ad Placeholder (No Demo Videos) -->
+          <div id="adPlaceholder" style="
             width: 100%;
             height: 100%;
-            object-fit: cover;
-            display: none;
-          " muted>
-            <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
-            <source src="https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4" type="video/mp4">
-          </video>
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+          ">
+            <div style="font-size: 24px; margin-bottom: 10px;">🎬</div>
+            <div style="font-size: 16px; font-weight: 600; text-align: center;">
+              Real ads will appear here<br/>after Google approval
+            </div>
+          </div>
           
           <!-- Play button overlay -->
           <div id="playButton" style="
@@ -304,7 +310,7 @@ const showMockAdExperience = (): Promise<boolean> => {
     const adInfo = adDialog.querySelector('#adInfo') as HTMLElement;
     const skipBtn = adDialog.querySelector('#skipBtn') as HTMLElement;
     const rewardBtn = adDialog.querySelector('#rewardBtn') as HTMLButtonElement;
-    const adVideo = adDialog.querySelector('#adVideo') as HTMLVideoElement;
+    const adPlaceholder = adDialog.querySelector('#adPlaceholder') as HTMLElement;
     
     let videoStarted = false;
     let videoCompleted = false;
@@ -319,67 +325,47 @@ const showMockAdExperience = (): Promise<boolean> => {
     const startVideo = () => {
       videoStarted = true;
       
-      // Hide play button and show video
+      // Hide play button and show ad placeholder
       playButton.style.display = 'none';
       videoStatus.style.display = 'none';
-      adVideo.style.display = 'block';
       progressContainer.style.display = 'block';
       
-      // Start playing the video
-      adVideo.play().then(() => {
-        console.log('🎬 Video started playing');
-        adInfo.textContent = 'Watch the full video to earn coins! 💰';
+      // Show message about real ads
+      adInfo.textContent = 'Simulating ad experience - real ads require Google approval 💰';
+      
+      // Track progress (15 second simulation)
+      let timeLeft = 15;
+      const timer = setInterval(() => {
+        timeLeft--;
+        const progress = ((15 - timeLeft) / 15) * 100;
+        progressBar.style.width = `${progress}%`;
         
-        // Track video progress
-        let timeLeft = 15;
-        const timer = setInterval(() => {
-          timeLeft--;
-          const progress = ((15 - timeLeft) / 15) * 100;
-          progressBar.style.width = `${progress}%`;
+        if (timeLeft > 0) {
+          rewardBtn.textContent = `Claim Reward (${15 - timeLeft}s)`;
+          adInfo.textContent = `${timeLeft} seconds remaining... (Demo mode)`;
+        } else {
+          clearInterval(timer);
+          videoCompleted = true;
           
-          if (timeLeft > 0) {
-            rewardBtn.textContent = `Claim Reward (${15 - timeLeft}s)`;
-            adInfo.textContent = `${timeLeft} seconds remaining...`;
-          } else {
-            clearInterval(timer);
-            videoCompleted = true;
-            adVideo.pause();
-            
-            // Show completion overlay
-            const completionOverlay = document.createElement('div');
-            completionOverlay.style.cssText = `
-              position: absolute;
-              top: 0;
-              left: 0;
-              right: 0;
-              bottom: 0;
-              background: rgba(0,0,0,0.8);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: white;
-              font-size: 18px;
-              font-weight: bold;
-              z-index: 20;
+          // Show completion message
+          const adPlaceholder = adDialog.querySelector('#adPlaceholder') as HTMLElement;
+          if (adPlaceholder) {
+            adPlaceholder.innerHTML = `
+              <div style="font-size: 24px; margin-bottom: 10px;">✅</div>
+              <div style="font-size: 16px; font-weight: 600; text-align: center;">
+                Ad Experience Complete!<br/>
+                <small style="opacity: 0.8;">Real ads will generate revenue</small>
+              </div>
             `;
-            completionOverlay.textContent = '✅ Video Complete!';
-            adVideo.parentElement?.appendChild(completionOverlay);
-            
-            adInfo.textContent = 'Video completed! Click to claim your reward! 🎉';
-            rewardBtn.disabled = false;
-            rewardBtn.style.opacity = '1';
-            rewardBtn.style.background = '#34a853';
-            rewardBtn.textContent = '🎉 Claim 5 Coins!';
           }
-        }, 1000);
-        
-      }).catch((error) => {
-        console.error('❌ Video play error:', error);
-        // Fallback to text-based experience
-        videoStatus.style.display = 'block';
-        videoStatus.textContent = '📺 Video Playing...';
-        adInfo.textContent = 'Watch for 15 seconds to earn coins! 💰';
-      });
+          
+          adInfo.textContent = 'Demo completed! Click to claim your reward! 🎉';
+          rewardBtn.disabled = false;
+          rewardBtn.style.opacity = '1';
+          rewardBtn.style.background = '#34a853';
+          rewardBtn.textContent = '🎉 Claim 5 Coins!';
+        }
+      }, 1000);
     };
     
     // Skip button handler
