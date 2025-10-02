@@ -185,43 +185,17 @@ export function RewardSystem() {
     setCompletingTask(taskId)
     
     try {
-      // Check if AdMob is available (in a real implementation)
-      if (typeof window !== 'undefined' && (window as any).adsbygoogle) {
-        // This would be the real AdMob integration
-        toast('Loading video ad...', { icon: '📺' })
-        
-        // Simulate video ad loading and completion
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
-        // Show a mock video dialog
-        const watchVideo = await showMockVideoDialog()
-        
-        if (watchVideo) {
-          // Award coins after video completion
-          const response = await apiRequest(`api/rewards/complete/${taskId}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...getAuthHeaders()
-            }
-          })
-          
-          if (response.ok) {
-            const data = await response.json()
-            toast.success(`Video completed! You earned ${data.coinsEarned || 5} coins!`)
-            fetchRewardTasks()
-            fetchUserCoins()
-          } else {
-            const error = await response.json()
-            toast.error(error.message || 'Failed to award coins')
-          }
-        } else {
-          toast.error('Video was not completed')
-        }
-      } else {
-        // Fallback: Direct reward without video (current behavior)
-        toast('AdMob not loaded, awarding coins directly...', { icon: '⚡' })
-        
+      // Always show the video experience (mock player until real AdMob is integrated)
+      toast('Loading video ad...', { icon: '📺' })
+      
+      // Simulate video ad loading
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      // Show the video dialog (mock player)
+      const watchVideo = await showMockVideoDialog()
+      
+      if (watchVideo) {
+        // Award coins after video completion
         const response = await apiRequest(`api/rewards/complete/${taskId}`, {
           method: 'POST',
           headers: {
@@ -232,16 +206,18 @@ export function RewardSystem() {
         
         if (response.ok) {
           const data = await response.json()
-          toast.success(`Task completed! You earned ${data.coinsEarned || 5} coins!`)
+          toast.success(`Video completed! You earned ${data.coinsEarned || 5} coins!`)
           fetchRewardTasks()
           fetchUserCoins()
         } else {
           const error = await response.json()
-          toast.error(error.message || 'Failed to complete task')
+          toast.error(error.message || 'Failed to award coins')
         }
+      } else {
+        toast.error('Video was not completed - no reward given')
       }
     } catch (error) {
-      console.error('Error with AdMob video:', error)
+      console.error('Error with video ad:', error)
       toast.error('Failed to load video ad. Please try again.')
     } finally {
       setCompletingTask(null)
@@ -268,49 +244,82 @@ export function RewardSystem() {
         <div style="
           background: white;
           padding: 20px;
-          border-radius: 10px;
+          border-radius: 15px;
           text-align: center;
-          max-width: 400px;
+          max-width: 450px;
           margin: 20px;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.3);
         ">
-          <h3 style="margin-bottom: 15px; color: #333;">🎬 Rewarded Video Ad</h3>
+          <h3 style="margin-bottom: 15px; color: #333; font-size: 20px;">🎬 Rewarded Video Ad</h3>
           <div style="
-            width: 300px;
-            height: 200px;
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            width: 100%;
+            max-width: 350px;
+            height: 220px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             margin: 15px auto;
-            border-radius: 8px;
+            border-radius: 12px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
+            position: relative;
+            overflow: hidden;
           ">
-            📺 Video Playing...
+            <div style="
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><circle cx=\"50\" cy=\"50\" r=\"40\" fill=\"none\" stroke=\"white\" stroke-width=\"2\" opacity=\"0.3\"/><polygon points=\"40,35 40,65 65,50\" fill=\"white\" opacity=\"0.8\"/></svg>') center/60px no-repeat;
+            "></div>
+            <div style="z-index: 1; margin-top: 20px;">📺 Video Playing...</div>
+            <div id="videoProgress" style="
+              position: absolute;
+              bottom: 10px;
+              left: 10px;
+              right: 10px;
+              height: 4px;
+              background: rgba(255,255,255,0.3);
+              border-radius: 2px;
+            ">
+              <div id="progressBar" style="
+                height: 100%;
+                background: white;
+                border-radius: 2px;
+                width: 0%;
+                transition: width 1s linear;
+              "></div>
+            </div>
           </div>
           <div style="margin: 15px 0;">
-            <div id="countdown" style="font-size: 16px; color: #666;">Watch for 15 seconds to earn coins!</div>
+            <div id="countdown" style="font-size: 16px; color: #666; font-weight: 500;">Watch for 15 seconds to earn 5 coins! 💰</div>
           </div>
-          <button id="closeBtn" style="
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-right: 10px;
-          ">Close (No Reward)</button>
-          <button id="completeBtn" style="
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            opacity: 0.5;
-            cursor: not-allowed;
-          " disabled>Complete (0s)</button>
+          <div style="display: flex; gap: 10px; justify-content: center;">
+            <button id="closeBtn" style="
+              background: #dc3545;
+              color: white;
+              border: none;
+              padding: 10px 20px;
+              border-radius: 8px;
+              cursor: pointer;
+              font-weight: 500;
+              transition: background 0.2s;
+            ">❌ Close (No Reward)</button>
+            <button id="completeBtn" style="
+              background: #6c757d;
+              color: white;
+              border: none;
+              padding: 10px 20px;
+              border-radius: 8px;
+              cursor: not-allowed;
+              opacity: 0.6;
+              font-weight: 500;
+            " disabled>⏳ Complete (0s)</button>
+          </div>
         </div>
       `
       
@@ -319,22 +328,43 @@ export function RewardSystem() {
       const closeBtn = dialog.querySelector('#closeBtn')
       const completeBtn = dialog.querySelector('#completeBtn') as HTMLButtonElement
       const countdown = dialog.querySelector('#countdown')
+      const progressBar = dialog.querySelector('#progressBar') as HTMLElement
       
       let timeLeft = 15
+      const totalTime = 15
       const timer = setInterval(() => {
         timeLeft--
-        if (countdown) countdown.textContent = `Watch for ${timeLeft} seconds to earn coins!`
-        if (completeBtn) completeBtn.textContent = `Complete (${15-timeLeft}s)`
+        const progress = ((totalTime - timeLeft) / totalTime) * 100
         
-        if (timeLeft <= 0) {
-          clearInterval(timer)
-          if (completeBtn) {
+        // Update progress bar
+        if (progressBar) {
+          progressBar.style.width = `${progress}%`
+        }
+        
+        // Update countdown text
+        if (countdown) {
+          if (timeLeft > 0) {
+            countdown.textContent = `Watch for ${timeLeft} seconds to earn 5 coins! 💰`
+          } else {
+            countdown.textContent = 'Video completed! Click to claim your reward! 🎉'
+          }
+        }
+        
+        // Update button
+        if (completeBtn) {
+          if (timeLeft > 0) {
+            completeBtn.textContent = `⏳ Complete (${totalTime - timeLeft}s)`
+          } else {
             completeBtn.disabled = false
             completeBtn.style.opacity = '1'
             completeBtn.style.cursor = 'pointer'
-            completeBtn.textContent = 'Claim Reward! 🎉'
+            completeBtn.style.background = '#28a745'
+            completeBtn.textContent = '🎉 Claim Reward!'
           }
-          if (countdown) countdown.textContent = 'Video completed! Click to claim your reward.'
+        }
+        
+        if (timeLeft <= 0) {
+          clearInterval(timer)
         }
       }, 1000)
       
