@@ -62,6 +62,9 @@ export default function RazorpayWithdraw() {
   const [step, setStep] = useState(1) // 1: method selection, 2: details, 3: confirmation
 
   useEffect(() => {
+    console.log('🔧 RazorpayWithdraw component mounted, fetching methods...')
+    // Temporary: Force fallback methods to show immediately for testing
+    setFallbackMethods()
     fetchWithdrawalMethods()
     fetchWithdrawalHistory()
   }, [])
@@ -101,6 +104,7 @@ export default function RazorpayWithdraw() {
   }
 
   const setFallbackMethods = () => {
+    console.log('🚨 Setting fallback withdrawal methods...')
     const fallbackMethods = [
       {
         id: 'upi',
@@ -154,6 +158,7 @@ export default function RazorpayWithdraw() {
         ]
       }
     ]
+    console.log('✅ Fallback methods set:', fallbackMethods.length, 'methods')
     setMethods(fallbackMethods)
   }
 
