@@ -10,14 +10,37 @@ const PORT = process.env.PORT || 5000;
 
 // Security middleware
 app.use(helmet());
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'https://task-vip.vercel.app',
-    process.env.FRONTEND_URL
-  ].filter(Boolean),
-  credentials: true
-}));
+// Enhanced CORS configuration with debugging
+const corsOptions = {
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'https://task-vip.vercel.app',
+      process.env.FRONTEND_URL
+    ].filter(Boolean);
+    
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      console.log(`✅ CORS: Allowing origin ${origin}`);
+      callback(null, true);
+    } else {
+      console.log(`❌ CORS: Blocking origin ${origin}`);
+      console.log(`Allowed origins: ${allowedOrigins.join(', ')}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
 
 // Rate limiting - more generous for development and normal usage
 const limiter = rateLimit({
@@ -87,6 +110,17 @@ app.get('/api/admob/config', (req, res) => {
   };
   
   res.json(admobConfig);
+});
+
+// CORS test endpoint
+app.get('/api/cors/test', (req, res) => {
+  res.json({
+    message: 'CORS is working correctly!',
+    origin: req.get('Origin') || 'No origin header',
+    userAgent: req.get('User-Agent') || 'No user agent',
+    timestamp: new Date().toISOString(),
+    headers: req.headers
+  });
 });
 
 // Error handling middleware
