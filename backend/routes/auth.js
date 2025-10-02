@@ -4,6 +4,7 @@ const { body, validationResult } = require('express-validator');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const Referral = require('../models/Referral');
+const { MultiLevelReferral } = require('../models/MultiLevelReferral');
 const { authenticateToken, rateLimitSensitive } = require('../middleware/auth');
 
 const router = express.Router();
@@ -75,6 +76,9 @@ router.post('/register', [
     // Create referral (always present now with default "0000")
     try {
       await Referral.createReferral(finalReferralCode, user._id);
+      
+      // Create multi-level referral chain
+      await MultiLevelReferral.buildReferralChain(finalReferralCode, user._id);
     } catch (error) {
       console.error('Error creating referral:', error);
       // Don't fail registration if referral creation fails

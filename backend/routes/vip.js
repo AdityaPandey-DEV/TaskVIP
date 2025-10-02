@@ -3,6 +3,7 @@ const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const VipPurchase = require('../models/VipPurchase');
 const Credit = require('../models/Credit');
+const { MultiLevelReferral } = require('../models/MultiLevelReferral');
 const { authenticateToken, requireVip } = require('../middleware/auth');
 
 const router = express.Router();
@@ -172,6 +173,33 @@ router.post('/purchase', authenticateToken, [
     user.totalCredits += bonusCredits;
     user.availableCredits += bonusCredits;
     await user.save();
+
+    // Process multi-level referral commissions
+    try {
+      const vipPlans = [
+        { level: 1, price: 300 },
+        { level: 2, price: 600 },
+        { level: 3, price: 1000 }
+      ];
+      
+      const plan = vipPlans.find(p => p.level === vipLevel);
+      if (plan) {
+        await MultiLevelReferral.processCommissions(
+          userId,
+          plan.price,
+          'vip_purchase',
+          vipPurchase._id.toString(),
+          {
+            vipLevel,
+            planPrice: plan.price,
+            paymentMethod
+          }
+        );
+      }
+    } catch (commissionError) {
+      console.error('Error processing referral commissions:', commissionError);
+      // Don't fail the VIP purchase if commission processing fails
+    }
 
     res.json({
       message: 'VIP membership purchased successfully',

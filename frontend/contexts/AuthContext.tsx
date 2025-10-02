@@ -17,6 +17,7 @@ interface User {
   isVipActive: boolean
   totalCredits: number
   availableCredits: number
+  coinBalance: number
   kycStatus: string
   streak: number
   badges: string[]
