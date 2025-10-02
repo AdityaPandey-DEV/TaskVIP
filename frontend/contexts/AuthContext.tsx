@@ -10,7 +10,6 @@ interface User {
   email: string
   firstName: string
   lastName: string
-  phone: string
   referralCode: string
   vipLevel: number
   vipExpiry: string | null
@@ -38,7 +37,6 @@ interface RegisterData {
   password: string
   firstName: string
   lastName: string
-  phone: string
   referralCode?: string
 }
 

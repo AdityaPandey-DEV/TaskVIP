@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowLeft, Gift } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Gift } from 'lucide-react'
 import Link from 'next/link'
 
 export default function RegisterPage() {
@@ -12,7 +12,6 @@ export default function RegisterPage() {
     firstName: '',
     lastName: '',
     email: '',
-    phone: '',
     password: '',
     confirmPassword: '',
     referralCode: ''
@@ -57,7 +56,6 @@ export default function RegisterPage() {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
-        phone: formData.phone,
         password: formData.password,
         referralCode: formData.referralCode || undefined
       })
@@ -197,27 +195,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div>
-              <label htmlFor="phone" className="label">
-                Phone Number
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Phone className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  autoComplete="tel"
-                  required
-                  className="input pl-10"
-                  placeholder="+91 9876543210"
-                  value={formData.phone}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
 
             <div>
               <label htmlFor="password" className="label">
