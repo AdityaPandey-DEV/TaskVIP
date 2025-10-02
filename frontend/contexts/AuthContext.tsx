@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { useRouter } from 'next/navigation'
 import Cookies from 'js-cookie'
 import toast from 'react-hot-toast'
+import { apiRequest } from '@/lib/api'
 
 interface User {
   id: string
@@ -60,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      const response = await fetch('/api/auth/me', {
+      const response = await apiRequest('api/auth/me', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -82,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await apiRequest('api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -108,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const googleLogin = async (credential: string) => {
     try {
-      const response = await fetch('/api/auth/google', {
+      const response = await apiRequest('api/auth/google', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -140,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const googleCompleteRegistration = async (googleUserData: any, referralCode?: string) => {
     try {
-      const response = await fetch('/api/auth/google/complete', {
+      const response = await apiRequest('api/auth/google/complete', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -169,7 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (userData: RegisterData) => {
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await apiRequest('api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

@@ -9,10 +9,13 @@ const nextConfig = {
     domains: ['localhost', 'taskvip.com'],
   },
   async rewrites() {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    console.log('API URL for rewrites:', apiUrl);
+    
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL}/:path*`,
+        destination: `${apiUrl}/:path*`,
       },
     ];
   },

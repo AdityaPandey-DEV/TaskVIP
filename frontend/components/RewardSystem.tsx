@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import Cookies from 'js-cookie'
+import { apiRequest } from '@/lib/api'
 
 interface RewardTask {
   id: string
@@ -59,7 +60,7 @@ export function RewardSystem() {
 
   const fetchRewardTasks = async () => {
     try {
-      const response = await fetch('/api/rewards/tasks', {
+      const response = await apiRequest('api/rewards/tasks', {
         headers: getAuthHeaders()
       })
       if (response.ok) {
@@ -73,9 +74,9 @@ export function RewardSystem() {
 
   const fetchUserCoins = async () => {
     try {
-      const response = await fetch('/api/coins/balance', {
-        headers: getAuthHeaders()
-      })
+    const response = await apiRequest('api/coins/balance', {
+      headers: getAuthHeaders()
+    })
       if (response.ok) {
         const data = await response.json()
         setCoins(data)
@@ -89,7 +90,7 @@ export function RewardSystem() {
 
   const completeTask = async (taskId: string) => {
     try {
-      const response = await fetch(`/api/rewards/complete/${taskId}`, {
+      const response = await apiRequest(`api/rewards/complete/${taskId}`, {
         method: 'POST',
         headers: getAuthHeaders()
       })

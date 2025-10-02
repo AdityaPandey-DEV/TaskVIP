@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import Cookies from 'js-cookie'
+import { apiRequest } from '@/lib/api'
 import { 
   PlayCircle, 
   Users, 
@@ -89,7 +90,7 @@ export default function DashboardPage() {
       setLoadingTasks(true)
 
       // Fetch user stats
-      const statsResponse = await fetch('/api/credits/balance', {
+      const statsResponse = await apiRequest('api/credits/balance', {
         headers: getAuthHeaders()
       })
       if (statsResponse.ok) {
@@ -101,7 +102,7 @@ export default function DashboardPage() {
       setLoadingStats(false)
 
       // Fetch daily tasks
-      const tasksResponse = await fetch('/api/tasks/daily', {
+      const tasksResponse = await apiRequest('api/tasks/daily', {
         headers: getAuthHeaders()
       })
       if (tasksResponse.ok) {
