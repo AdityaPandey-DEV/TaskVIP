@@ -77,7 +77,7 @@ coinTransactionSchema.virtual('formattedAmount').get(function() {
 // Static method to get user's coin balance
 coinTransactionSchema.statics.getUserBalance = async function(userId) {
   const result = await this.aggregate([
-    { $match: { userId: mongoose.Types.ObjectId(userId), status: 'completed' } },
+    { $match: { userId: new mongoose.Types.ObjectId(userId), status: 'completed' } },
     { $group: { _id: null, totalCoins: { $sum: '$amount' } } }
   ]);
   
@@ -92,7 +92,7 @@ coinTransactionSchema.statics.getUserStats = async function(userId, days = 30) {
   const stats = await this.aggregate([
     { 
       $match: { 
-        userId: mongoose.Types.ObjectId(userId),
+        userId: new mongoose.Types.ObjectId(userId),
         status: 'completed',
         createdAt: { $gte: startDate }
       } 

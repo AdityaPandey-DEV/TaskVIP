@@ -407,7 +407,7 @@ router.get('/statistics', authenticateToken, async (req, res) => {
     const adStats = await Task.aggregate([
       {
         $match: {
-          userId: mongoose.Types.ObjectId(userId),
+          userId: new mongoose.Types.ObjectId(userId),
           type: { $in: ['ad_watch', 'offer_completion'] },
           createdAt: { $gte: start, $lte: end }
         }
@@ -433,7 +433,7 @@ router.get('/statistics', authenticateToken, async (req, res) => {
     const dailyEarnings = await Task.aggregate([
       {
         $match: {
-          userId: mongoose.Types.ObjectId(userId),
+          userId: new mongoose.Types.ObjectId(userId),
           type: { $in: ['ad_watch', 'offer_completion'] },
           status: 'verified',
           createdAt: { $gte: start, $lte: end }

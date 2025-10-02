@@ -141,7 +141,7 @@ withdrawalSchema.statics.canUserWithdraw = async function(userId, amount) {
   const todayWithdrawals = await this.aggregate([
     {
       $match: {
-        userId: mongoose.Types.ObjectId(userId),
+        userId: new mongoose.Types.ObjectId(userId),
         createdAt: { $gte: today },
         status: { $in: ['completed', 'processing', 'pending'] }
       }

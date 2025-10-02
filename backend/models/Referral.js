@@ -112,7 +112,7 @@ referralSchema.methods.awardBonus = function(amount, type = 'task_completion') {
 // Static method to get referrer's total earnings
 referralSchema.statics.getReferrerEarnings = async function(referrerId) {
   const result = await this.aggregate([
-    { $match: { referrer: mongoose.Types.ObjectId(referrerId) } },
+    { $match: { referrer: new mongoose.Types.ObjectId(referrerId) } },
     {
       $group: {
         _id: null,
@@ -140,7 +140,7 @@ referralSchema.statics.getReferrerEarnings = async function(referrerId) {
 
 // Static method to get referral statistics
 referralSchema.statics.getReferralStats = async function(referrerId, startDate, endDate) {
-  const matchQuery = { referrer: mongoose.Types.ObjectId(referrerId) };
+  const matchQuery = { referrer: new mongoose.Types.ObjectId(referrerId) };
   
   if (startDate && endDate) {
     matchQuery.createdAt = {

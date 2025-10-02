@@ -353,7 +353,7 @@ router.get('/statistics', authenticateToken, async (req, res) => {
     const stats = await Credit.aggregate([
       {
         $match: {
-          userId: mongoose.Types.ObjectId(userId),
+          userId: new mongoose.Types.ObjectId(userId),
           createdAt: { $gte: start, $lte: end }
         }
       },
@@ -372,7 +372,7 @@ router.get('/statistics', authenticateToken, async (req, res) => {
     const dailyEarnings = await Credit.aggregate([
       {
         $match: {
-          userId: mongoose.Types.ObjectId(userId),
+          userId: new mongoose.Types.ObjectId(userId),
           type: { $in: ['task_completion', 'referral_bonus', 'milestone_reward'] },
           createdAt: { $gte: start, $lte: end }
         }

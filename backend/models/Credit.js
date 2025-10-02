@@ -212,7 +212,7 @@ creditSchema.statics.getUserAvailableCredits = async function(userId) {
 // Static method to get user's total credits (all time)
 creditSchema.statics.getUserTotalCredits = async function(userId) {
   const result = await this.aggregate([
-    { $match: { userId: mongoose.Types.ObjectId(userId) } },
+    { $match: { userId: new mongoose.Types.ObjectId(userId) } },
     { $group: { _id: null, total: { $sum: '$amount' } } }
   ]);
   
