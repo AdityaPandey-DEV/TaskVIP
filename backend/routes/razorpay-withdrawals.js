@@ -19,29 +19,112 @@ router.get('/methods', authenticateToken, async (req, res) => {
       {
         id: 'bank_transfer',
         name: 'Bank Transfer',
-        description: 'Direct transfer to your bank account',
-        fee: 2.5,
-        minAmount: 100,
-        processingTime: '1-3 business days',
+        description: 'Direct transfer to your bank account - Secure & Reliable',
+        fee: 2.0,
+        minAmount: 50,
+        processingTime: '2-4 hours (IMPS)',
         icon: '🏦',
         fields: [
-          { name: 'accountNumber', label: 'Account Number', type: 'text', required: true },
-          { name: 'ifscCode', label: 'IFSC Code', type: 'text', required: true },
-          { name: 'bankName', label: 'Bank Name', type: 'text', required: true },
-          { name: 'accountHolderName', label: 'Account Holder Name', type: 'text', required: true }
+          { 
+            name: 'accountNumber', 
+            label: 'Bank Account Number', 
+            type: 'text', 
+            required: true,
+            placeholder: 'Enter your account number'
+          },
+          { 
+            name: 'confirmAccountNumber', 
+            label: 'Confirm Account Number', 
+            type: 'text', 
+            required: true,
+            placeholder: 'Re-enter your account number'
+          },
+          { 
+            name: 'ifscCode', 
+            label: 'IFSC Code', 
+            type: 'text', 
+            required: true,
+            placeholder: 'e.g., SBIN0001234'
+          },
+          {
+            name: 'bankName',
+            label: 'Bank Name',
+            type: 'select',
+            required: true,
+            options: [
+              { value: 'sbi', label: 'State Bank of India' },
+              { value: 'hdfc', label: 'HDFC Bank' },
+              { value: 'icici', label: 'ICICI Bank' },
+              { value: 'axis', label: 'Axis Bank' },
+              { value: 'kotak', label: 'Kotak Mahindra Bank' },
+              { value: 'pnb', label: 'Punjab National Bank' },
+              { value: 'bob', label: 'Bank of Baroda' },
+              { value: 'canara', label: 'Canara Bank' },
+              { value: 'union', label: 'Union Bank of India' },
+              { value: 'indian', label: 'Indian Bank' },
+              { value: 'yes', label: 'Yes Bank' },
+              { value: 'idfc', label: 'IDFC First Bank' },
+              { value: 'other', label: 'Other Bank' }
+            ]
+          },
+          { 
+            name: 'accountHolderName', 
+            label: 'Account Holder Name', 
+            type: 'text', 
+            required: true,
+            placeholder: 'Name as per bank records'
+          },
+          {
+            name: 'accountType',
+            label: 'Account Type',
+            type: 'select',
+            required: true,
+            options: [
+              { value: 'savings', label: 'Savings Account' },
+              { value: 'current', label: 'Current Account' }
+            ]
+          }
         ]
       },
       {
         id: 'upi',
         name: 'UPI Transfer',
-        description: 'Instant transfer via UPI',
-        fee: 2.0,
-        minAmount: 50,
-        processingTime: 'Instant to 30 minutes',
+        description: 'Instant transfer via UPI - Most Popular',
+        fee: 1.5,
+        minAmount: 10,
+        processingTime: 'Instant to 5 minutes',
         icon: '📱',
         fields: [
-          { name: 'upiId', label: 'UPI ID', type: 'text', required: true, placeholder: 'yourname@paytm' },
-          { name: 'upiName', label: 'Name on UPI', type: 'text', required: true }
+          { 
+            name: 'upiId', 
+            label: 'UPI ID', 
+            type: 'text', 
+            required: true, 
+            placeholder: 'yourname@paytm, 9876543210@ybl, etc.' 
+          },
+          { 
+            name: 'upiName', 
+            label: 'Name on UPI Account', 
+            type: 'text', 
+            required: true,
+            placeholder: 'Enter name as registered with UPI'
+          },
+          {
+            name: 'upiProvider',
+            label: 'UPI App',
+            type: 'select',
+            required: false,
+            options: [
+              { value: 'paytm', label: 'Paytm' },
+              { value: 'phonepe', label: 'PhonePe' },
+              { value: 'googlepay', label: 'Google Pay' },
+              { value: 'bhim', label: 'BHIM' },
+              { value: 'amazonpay', label: 'Amazon Pay' },
+              { value: 'mobikwik', label: 'MobiKwik' },
+              { value: 'freecharge', label: 'Freecharge' },
+              { value: 'other', label: 'Other' }
+            ]
+          }
         ]
       },
       {
@@ -92,6 +175,66 @@ router.get('/methods', authenticateToken, async (req, res) => {
     });
   }
 });
+
+// Validation functions
+const validateUPI = (upiId) => {
+  const upiRegex = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/;
+  return upiRegex.test(upiId);
+};
+
+const validateIFSC = (ifsc) => {
+  const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+  return ifscRegex.test(ifsc);
+};
+
+const validateAccountNumber = (accountNumber) => {
+  const accRegex = /^[0-9]{9,18}$/;
+  return accRegex.test(accountNumber);
+};
+
+const validateBankTransfer = (payoutDetails) => {
+  const { accountNumber, confirmAccountNumber, ifscCode, accountHolderName, bankName, accountType } = payoutDetails;
+  
+  if (!accountNumber || !confirmAccountNumber || !ifscCode || !accountHolderName || !bankName || !accountType) {
+    return { valid: false, message: 'All bank details are required' };
+  }
+  
+  if (accountNumber !== confirmAccountNumber) {
+    return { valid: false, message: 'Account numbers do not match' };
+  }
+  
+  if (!validateAccountNumber(accountNumber)) {
+    return { valid: false, message: 'Invalid account number format' };
+  }
+  
+  if (!validateIFSC(ifscCode)) {
+    return { valid: false, message: 'Invalid IFSC code format' };
+  }
+  
+  if (accountHolderName.length < 2) {
+    return { valid: false, message: 'Account holder name is too short' };
+  }
+  
+  return { valid: true };
+};
+
+const validateUPITransfer = (payoutDetails) => {
+  const { upiId, upiName } = payoutDetails;
+  
+  if (!upiId || !upiName) {
+    return { valid: false, message: 'UPI ID and name are required' };
+  }
+  
+  if (!validateUPI(upiId)) {
+    return { valid: false, message: 'Invalid UPI ID format' };
+  }
+  
+  if (upiName.length < 2) {
+    return { valid: false, message: 'UPI name is too short' };
+  }
+  
+  return { valid: true };
+};
 
 // Create withdrawal request
 router.post('/create', authenticateToken, async (req, res) => {
@@ -144,6 +287,26 @@ router.post('/create', authenticateToken, async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'You have pending withdrawal requests. Please wait for them to complete.'
+      });
+    }
+    
+    // Validate payout details based on withdrawal method
+    let validationResult;
+    switch (withdrawalMethod) {
+      case 'bank_transfer':
+        validationResult = validateBankTransfer(payoutDetails);
+        break;
+      case 'upi':
+        validationResult = validateUPITransfer(payoutDetails);
+        break;
+      default:
+        validationResult = { valid: true };
+    }
+    
+    if (!validationResult.valid) {
+      return res.status(400).json({
+        success: false,
+        message: validationResult.message
       });
     }
     

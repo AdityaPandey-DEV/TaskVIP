@@ -118,6 +118,21 @@ export default function RazorpayWithdraw() {
     return (parseFloat(amount) || 0) * 10 // 10 coins = ₹1
   }
 
+  const validateUPI = (upiId: string) => {
+    const upiRegex = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/
+    return upiRegex.test(upiId)
+  }
+
+  const validateIFSC = (ifsc: string) => {
+    const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/
+    return ifscRegex.test(ifsc.toUpperCase())
+  }
+
+  const validateAccountNumber = (accountNumber: string) => {
+    const accRegex = /^[0-9]{9,18}$/
+    return accRegex.test(accountNumber)
+  }
+
   const validateForm = () => {
     if (!selectedMethod || !amount) return false
     
@@ -132,7 +147,36 @@ export default function RazorpayWithdraw() {
       if (field.required && !payoutDetails[field.name]) return false
     }
     
+    // Method-specific validation
+    if (selectedMethod.id === 'upi') {
+      if (!validateUPI(payoutDetails.upiId)) return false
+    }
+    
+    if (selectedMethod.id === 'bank_transfer') {
+      if (!validateAccountNumber(payoutDetails.accountNumber)) return false
+      if (!validateIFSC(payoutDetails.ifscCode)) return false
+      if (payoutDetails.accountNumber !== payoutDetails.confirmAccountNumber) return false
+    }
+    
     return true
+  }
+
+  const getFieldError = (fieldName: string) => {
+    const value = payoutDetails[fieldName]
+    if (!value) return null
+    
+    switch (fieldName) {
+      case 'upiId':
+        return !validateUPI(value) ? 'Invalid UPI ID format' : null
+      case 'accountNumber':
+        return !validateAccountNumber(value) ? 'Invalid account number' : null
+      case 'confirmAccountNumber':
+        return payoutDetails.accountNumber && value !== payoutDetails.accountNumber ? 'Account numbers do not match' : null
+      case 'ifscCode':
+        return !validateIFSC(value) ? 'Invalid IFSC code format' : null
+      default:
+        return null
+    }
   }
 
   const handleSubmit = async () => {
@@ -213,8 +257,8 @@ export default function RazorpayWithdraw() {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-2xl font-bold">{user?.coinBalance || 0}</div>
-            <div className="text-sm text-green-100">Available Coins</div>
+            <div className="text-2xl font-bold">{Math.floor((user?.coinBalance || 0) / 10)}</div>
+            <div className="text-sm text-green-100">Credits Ready</div>
           </div>
           <div className="bg-white/10 rounded-lg p-3">
             <div className="text-2xl font-bold">₹{Math.floor((user?.coinBalance || 0) / 10)}</div>
@@ -348,14 +392,21 @@ export default function RazorpayWithdraw() {
                           ))}
                         </select>
                       ) : (
-                        <input
-                          type={field.type}
-                          value={payoutDetails[field.name] || ''}
-                          onChange={(e) => handleFieldChange(field.name, e.target.value)}
-                          placeholder={field.placeholder}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          required={field.required}
-                        />
+                        <div>
+                          <input
+                            type={field.type}
+                            value={payoutDetails[field.name] || ''}
+                            onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                            placeholder={field.placeholder}
+                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                              getFieldError(field.name) ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                            required={field.required}
+                          />
+                          {getFieldError(field.name) && (
+                            <p className="mt-1 text-sm text-red-600">{getFieldError(field.name)}</p>
+                          )}
+                        </div>
                       )}
                     </div>
                   ))}

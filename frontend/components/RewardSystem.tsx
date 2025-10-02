@@ -254,7 +254,7 @@ export function RewardSystem() {
           <div className="mb-3 sm:mb-0">
             <h2 className="text-xl lg:text-2xl font-bold mb-2">💰 Your Coins</h2>
             <div className="space-y-1">
-              <p className="text-base lg:text-lg">Balance: <span className="font-bold">{coins.balance?.toLocaleString() || '0'}</span> coins</p>
+              <p className="text-base lg:text-lg">Credits Ready: <span className="font-bold">{coins.balance?.toLocaleString() || '0'}</span> coins</p>
               <p className="text-sm opacity-90">Today: {coins.stats?.todayEarned || 0}/{coins.stats?.dailyLimit || 1000} coins</p>
               <p className="text-sm opacity-90">Total Earned: {coins.stats?.totalEarned?.toLocaleString() || '0'} coins</p>
             </div>
