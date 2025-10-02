@@ -157,28 +157,28 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-slate-50">
       {/* Mobile Header */}
-      <div className="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center space-x-3">
+      <div className="lg:hidden bg-white border-b border-slate-200 px-4 py-4 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+        <div className="flex items-center space-x-4">
           <button 
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+            className="p-2.5 rounded-xl hover:bg-slate-100 transition-colors"
           >
-            <Menu className="w-5 h-5 text-slate-600" />
+            <Menu className="w-6 h-6 text-slate-600" />
           </button>
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-              <Crown className="w-4 h-4 text-white" />
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl flex items-center justify-center">
+              <Crown className="w-5 h-5 text-white" />
             </div>
-            <span className="font-bold text-slate-800">TaskVIP</span>
+            <span className="font-bold text-lg text-slate-800">TaskVIP</span>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <button className="p-2 rounded-lg hover:bg-slate-100 transition-colors relative">
-            <Bell className="w-5 h-5 text-slate-600" />
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+        <div className="flex items-center space-x-3">
+          <button className="p-2.5 rounded-xl hover:bg-slate-100 transition-colors relative">
+            <Bell className="w-6 h-6 text-slate-600" />
+            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white"></span>
           </button>
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
-            <span className="text-white text-sm font-medium">{user.firstName?.[0]}</span>
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+            <span className="text-white text-base font-medium">{user.firstName?.[0]}</span>
           </div>
         </div>
       </div>
@@ -187,38 +187,38 @@ export default function DashboardPage() {
       {sidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)}></div>
-          <div className="relative flex flex-col w-64 bg-white shadow-xl">
+          <div className="relative flex flex-col w-72 bg-white shadow-xl">
             <div className="p-6 border-b border-slate-200">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl flex items-center justify-center">
-                  <Crown className="w-5 h-5 text-white" />
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl flex items-center justify-center">
+                  <Crown className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="font-bold text-slate-800">TaskVIP</h2>
+                  <h2 className="font-bold text-lg text-slate-800">TaskVIP</h2>
                   <p className="text-sm text-slate-500">Earn & Grow</p>
                 </div>
               </div>
             </div>
             <nav className="flex-1 p-4 space-y-2">
-              <Link href="/dashboard" className="flex items-center space-x-3 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 font-medium">
-                <Activity className="w-4 h-4" />
-                <span>Dashboard</span>
+              <Link href="/dashboard" className="flex items-center space-x-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-700 font-medium">
+                <Activity className="w-5 h-5" />
+                <span className="text-base">Dashboard</span>
               </Link>
-              <Link href="/tasks" className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700">
-                <Target className="w-4 h-4" />
-                <span>Tasks</span>
+              <Link href="/tasks" className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-100 text-slate-700 transition-colors">
+                <Target className="w-5 h-5" />
+                <span className="text-base">Tasks</span>
               </Link>
-              <Link href="/referrals" className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700">
-                <Users className="w-4 h-4" />
-                <span>Referrals</span>
+              <Link href="/referrals" className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-100 text-slate-700 transition-colors">
+                <Users className="w-5 h-5" />
+                <span className="text-base">Referrals</span>
               </Link>
-              <Link href="/vip" className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700">
-                <Crown className="w-4 h-4" />
-                <span>VIP</span>
+              <Link href="/vip" className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-100 text-slate-700 transition-colors">
+                <Crown className="w-5 h-5" />
+                <span className="text-base">VIP</span>
               </Link>
-              <Link href="/withdraw" className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700">
-                <DollarSign className="w-4 h-4" />
-                <span>Withdraw</span>
+              <Link href="/withdraw" className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-100 text-slate-700 transition-colors">
+                <DollarSign className="w-5 h-5" />
+                <span className="text-base">Withdraw</span>
               </Link>
             </nav>
           </div>
