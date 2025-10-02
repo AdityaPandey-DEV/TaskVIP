@@ -91,7 +91,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ email, password })
       })
 
-      const data = await response.json()
+      // Handle rate limiting
+      if (response.status === 429) {
+        toast.error('Too many requests. Please wait a few minutes and try again.')
+        throw new Error('Rate limited')
+      }
+
+      // Try to parse JSON, but handle non-JSON responses
+      let data
+      try {
+        data = await response.json()
+      } catch (parseError) {
+        const textResponse = await response.text()
+        throw new Error(`Server error: ${textResponse}`)
+      }
 
       if (response.ok) {
         Cookies.set('token', data.token, { expires: 7 })
@@ -102,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(data.message || 'Login failed')
       }
     } catch (error) {
+      console.error('Login error:', error)
       toast.error(error instanceof Error ? error.message : 'Login failed')
       throw error
     }
@@ -117,7 +131,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ credential })
       })
 
-      const data = await response.json()
+      // Handle rate limiting
+      if (response.status === 429) {
+        toast.error('Too many requests. Please wait a few minutes and try again.')
+        throw new Error('Rate limited')
+      }
+
+      // Try to parse JSON, but handle non-JSON responses
+      let data
+      try {
+        data = await response.json()
+      } catch (parseError) {
+        const textResponse = await response.text()
+        throw new Error(`Server error: ${textResponse}`)
+      }
 
       if (response.ok) {
         if (data.needsReferralCode) {
@@ -134,6 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(data.message || 'Google Sign-In failed')
       }
     } catch (error) {
+      console.error('Google login error:', error)
       toast.error(error instanceof Error ? error.message : 'Google Sign-In failed')
       throw error
     }
