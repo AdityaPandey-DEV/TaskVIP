@@ -5,7 +5,14 @@ import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'react-hot-toast'
 import Cookies from 'js-cookie'
 import { apiRequest } from '@/lib/api'
-import { Crown, CheckCircle, Star, Zap, Shield, Loader2 } from 'lucide-react'
+import { Crown, CheckCircle, Star, Zap, Shield, Loader2, CreditCard } from 'lucide-react'
+
+// Declare Razorpay for TypeScript
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 interface VipLevel {
   level: number
@@ -63,69 +70,184 @@ export function VipBenefits() {
       dailyCreditLimitMultiplier: 1,
       referralBonusMultiplier: 1,
       exclusiveOffers: false,
-      description: 'Basic access to earning opportunities'
+      description: 'Basic access to earning opportunities • 20% referral commission'
     },
     {
       level: 1,
-      name: 'VIP Bronze',
-      price: 1000,
+      name: 'Bronze',
+      price: 99, // ₹99 per month
       dailyCreditLimitMultiplier: 1.5,
       referralBonusMultiplier: 1.2,
       exclusiveOffers: true,
-      description: 'Enhanced earning limits and exclusive offers'
+      description: 'Enhanced earning limits • 30% referral commission • Exclusive offers'
     },
     {
       level: 2,
-      name: 'VIP Silver',
-      price: 2500,
+      name: 'Silver',
+      price: 199, // ₹199 per month
       dailyCreditLimitMultiplier: 2,
       referralBonusMultiplier: 1.5,
       exclusiveOffers: true,
-      description: 'Higher earning potential with premium rewards'
+      description: 'Higher earning potential • 40% referral commission • Premium rewards'
     },
     {
       level: 3,
-      name: 'VIP Gold',
-      price: 5000,
+      name: 'Gold',
+      price: 299, // ₹299 per month
       dailyCreditLimitMultiplier: 3,
       referralBonusMultiplier: 2,
       exclusiveOffers: true,
-      description: 'Maximum earning potential with exclusive benefits'
+      description: 'Maximum earning potential • 50% referral commission • Exclusive benefits'
     }
   ]
+
+  const handleRazorpayPayment = async (level: number, amount: number) => {
+    try {
+      // Create Razorpay order
+      const orderResponse = await apiRequest('api/vip/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({ 
+          vipLevel: level,
+          amount: amount * 100 // Convert to paise
+        })
+      })
+
+      const orderData = await orderResponse.json()
+      
+      if (!orderResponse.ok) {
+        throw new Error(orderData.message || 'Failed to create order')
+      }
+
+      // Initialize Razorpay
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: orderData.amount,
+        currency: 'INR',
+        name: 'TaskVIP',
+        description: `${vipLevels.find(v => v.level === level)?.name} VIP Subscription`,
+        order_id: orderData.id,
+        handler: async (response: any) => {
+          try {
+            // Verify payment
+            const verifyResponse = await apiRequest('api/vip/verify-payment', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                vipLevel: level
+              })
+            })
+
+            const verifyData = await verifyResponse.json()
+
+            if (verifyResponse.ok) {
+              toast.success(`Successfully upgraded to ${vipLevels.find(v => v.level === level)?.name} VIP!`)
+              if (updateUser) {
+                updateUser(verifyData.user)
+              }
+              fetchVipLevels()
+            } else {
+              toast.error(verifyData.message || 'Payment verification failed')
+            }
+          } catch (error) {
+            console.error('Payment verification error:', error)
+            toast.error('Payment verification failed')
+          } finally {
+            setUpgrading(null)
+          }
+        },
+        prefill: {
+          name: `${user?.firstName} ${user?.lastName}`,
+          email: user?.email,
+        },
+        theme: {
+          color: '#2563eb'
+        },
+        modal: {
+          ondismiss: () => {
+            setUpgrading(null)
+            toast.error('Payment cancelled')
+          }
+        }
+      }
+
+      const razorpay = new window.Razorpay(options)
+      razorpay.open()
+    } catch (error) {
+      console.error('Razorpay payment error:', error)
+      toast.error('Payment initialization failed')
+      setUpgrading(null)
+    }
+  }
 
   const handleUpgrade = async (level: number) => {
     if (!user) {
       toast.error('Please sign in to upgrade VIP.')
       return
     }
+
+    // Prevent downgrade or same level upgrade
+    if (user.vipLevel >= level && user.isVipActive) {
+      toast.error('You cannot downgrade or upgrade to your current VIP level.')
+      return
+    }
+
     setUpgrading(level)
-    try {
-      const response = await apiRequest('api/vip/upgrade', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders()
-        },
-        body: JSON.stringify({ vipLevel: level })
-      })
 
-      const data = await response.json()
-
-      if (response.ok) {
-        toast.success(data.message || `Successfully upgraded to VIP Level ${level}!`)
-        if (updateUser) {
-          updateUser(data.user) // Update user context
-        }
-        fetchVipLevels() // Refresh levels to show updated status
-      } else {
-        toast.error(data.message || 'Failed to upgrade VIP.')
-      }
-    } catch (error) {
-      console.error('Error upgrading VIP:', error)
-      toast.error('Error upgrading VIP.')
-    } finally {
+    const vipLevel = vipLevels.find(v => v.level === level)
+    if (!vipLevel) {
+      toast.error('Invalid VIP level selected.')
       setUpgrading(null)
+      return
+    }
+
+    // Free tier upgrade (using coins)
+    if (level === 0 || vipLevel.price === 0) {
+      try {
+        const response = await apiRequest('api/vip/upgrade', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeaders()
+          },
+          body: JSON.stringify({ vipLevel: level })
+        })
+
+        const data = await response.json()
+
+        if (response.ok) {
+          toast.success(data.message || `Successfully upgraded to ${vipLevel.name}!`)
+          if (updateUser) {
+            updateUser(data.user)
+          }
+          fetchVipLevels()
+        } else {
+          toast.error(data.message || 'Failed to upgrade VIP.')
+        }
+      } catch (error) {
+        console.error('Error upgrading VIP:', error)
+        toast.error('Error upgrading VIP.')
+      } finally {
+        setUpgrading(null)
+      }
+    } else {
+      // Paid tier upgrade (using Razorpay)
+      if (!window.Razorpay) {
+        toast.error('Payment system not loaded. Please refresh the page.')
+        setUpgrading(null)
+        return
+      }
+      
+      await handleRazorpayPayment(level, vipLevel.price)
     }
   }
 
@@ -178,7 +300,7 @@ export function VipBenefits() {
             }`} />
             <h3 className="text-2xl font-bold text-gray-900 mb-2">{level.name}</h3>
             <p className="text-4xl font-extrabold text-blue-600 mb-4">
-              {level.price === 0 ? 'Free' : `${level.price} Coins`}
+              {level.price === 0 ? 'Free' : `₹${level.price}/month`}
             </p>
             <p className="text-gray-600 mb-6">{level.description}</p>
             <ul className="text-left text-gray-700 space-y-2 mb-6">
@@ -199,26 +321,33 @@ export function VipBenefits() {
             </ul>
             {user?.vipLevel === level.level && user?.isVipActive ? (
               <button className="w-full bg-green-600 text-white py-2 px-4 rounded-lg font-medium" disabled>
-                Current VIP
+                <CheckCircle className="w-4 h-4 mr-2 inline" />
+                Current Plan
+              </button>
+            ) : user && user.vipLevel > level.level && user.isVipActive ? (
+              <button className="w-full bg-gray-400 text-white py-2 px-4 rounded-lg font-medium" disabled>
+                Lower Tier
               </button>
             ) : (
               <button
                 onClick={() => handleUpgrade(level.level)}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={upgrading === level.level || (user && user.availableCredits < level.price)}
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                disabled={upgrading === level.level}
               >
                 {upgrading === level.level ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin mr-2 inline" />
-                    Upgrading...
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Processing...
                   </>
+                ) : level.price === 0 ? (
+                  'Select Free Plan'
                 ) : (
-                  'Upgrade Now'
+                  <>
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Upgrade Now
+                  </>
                 )}
               </button>
-            )}
-            {user && user.availableCredits < level.price && !user.isVipActive && level.price > 0 && (
-              <p className="text-red-500 text-sm mt-2">Not enough coins to upgrade.</p>
             )}
           </div>
         ))}

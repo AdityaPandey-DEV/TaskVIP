@@ -5,8 +5,16 @@ const VipPurchase = require('../models/VipPurchase');
 const Credit = require('../models/Credit');
 const { MultiLevelReferral } = require('../models/MultiLevelReferral');
 const { authenticateToken, requireVip } = require('../middleware/auth');
+const Razorpay = require('razorpay');
+const crypto = require('crypto');
 
 const router = express.Router();
+
+// Initialize Razorpay
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET
+});
 
 // @route   GET /api/vip/plans
 // @desc    Get VIP plans
@@ -409,6 +417,208 @@ router.post('/cancel', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Cancel VIP error:', error);
     res.status(500).json({ message: 'Failed to cancel VIP' });
+  }
+});
+
+// @route   POST /api/vip/create-order
+// @desc    Create Razorpay order for VIP subscription
+// @access  Private
+router.post('/create-order', authenticateToken, [
+  body('vipLevel').isInt({ min: 1, max: 3 }).withMessage('Invalid VIP level'),
+  body('amount').isInt({ min: 1 }).withMessage('Invalid amount')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { vipLevel, amount } = req.body;
+    const userId = req.user.id;
+
+    // Get VIP level details
+    const vipLevels = {
+      1: { name: 'Bronze', price: 99 },
+      2: { name: 'Silver', price: 199 },
+      3: { name: 'Gold', price: 299 }
+    };
+
+    const selectedVip = vipLevels[vipLevel];
+    if (!selectedVip) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid VIP level'
+      });
+    }
+
+    // Verify amount matches VIP level price
+    if (amount !== selectedVip.price * 100) { // amount in paise
+      return res.status(400).json({
+        success: false,
+        message: 'Amount mismatch'
+      });
+    }
+
+    // Create Razorpay order
+    const orderOptions = {
+      amount: amount, // amount in paise
+      currency: 'INR',
+      receipt: `vip_${vipLevel}_${userId}_${Date.now()}`,
+      notes: {
+        userId: userId,
+        vipLevel: vipLevel,
+        vipName: selectedVip.name
+      }
+    };
+
+    const order = await razorpay.orders.create(orderOptions);
+
+    res.json({
+      success: true,
+      id: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      receipt: order.receipt
+    });
+
+  } catch (error) {
+    console.error('Create order error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create order',
+      error: error.message
+    });
+  }
+});
+
+// @route   POST /api/vip/verify-payment
+// @desc    Verify Razorpay payment and upgrade VIP
+// @access  Private
+router.post('/verify-payment', authenticateToken, [
+  body('razorpay_order_id').notEmpty().withMessage('Order ID is required'),
+  body('razorpay_payment_id').notEmpty().withMessage('Payment ID is required'),
+  body('razorpay_signature').notEmpty().withMessage('Signature is required'),
+  body('vipLevel').isInt({ min: 1, max: 3 }).withMessage('Invalid VIP level')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { 
+      razorpay_order_id, 
+      razorpay_payment_id, 
+      razorpay_signature, 
+      vipLevel 
+    } = req.body;
+    const userId = req.user.id;
+
+    // Verify signature
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(body.toString())
+      .digest('hex');
+
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid payment signature'
+      });
+    }
+
+    // Get payment details from Razorpay
+    const payment = await razorpay.payments.fetch(razorpay_payment_id);
+    
+    if (payment.status !== 'captured') {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment not captured'
+      });
+    }
+
+    // Update user VIP status
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Calculate VIP expiry (30 days from now)
+    const vipExpiry = new Date();
+    vipExpiry.setDate(vipExpiry.getDate() + 30);
+
+    // Update user
+    user.vipLevel = vipLevel;
+    user.isVipActive = true;
+    user.vipExpiry = vipExpiry;
+    user.vipPurchaseDate = new Date();
+    await user.save();
+
+    // Create VIP purchase record
+    const vipPurchase = new VipPurchase({
+      userId: userId,
+      vipLevel: vipLevel,
+      amount: payment.amount / 100, // Convert from paise to rupees
+      currency: payment.currency,
+      paymentMethod: 'razorpay',
+      paymentId: razorpay_payment_id,
+      orderId: razorpay_order_id,
+      status: 'completed',
+      purchaseDate: new Date(),
+      expiryDate: vipExpiry,
+      metadata: {
+        razorpay_signature,
+        payment_details: payment
+      }
+    });
+    await vipPurchase.save();
+
+    // Process referral commissions for VIP purchase
+    try {
+      await MultiLevelReferral.processCommissions(
+        userId,
+        payment.amount / 100, // Convert to rupees
+        'vip_purchase',
+        vipPurchase._id.toString(),
+        {
+          vipLevel: vipLevel,
+          paymentId: razorpay_payment_id
+        }
+      );
+    } catch (commissionError) {
+      console.error('Error processing VIP purchase commissions:', commissionError);
+    }
+
+    res.json({
+      success: true,
+      message: `Successfully upgraded to VIP Level ${vipLevel}!`,
+      user: {
+        id: user._id,
+        vipLevel: user.vipLevel,
+        isVipActive: user.isVipActive,
+        vipExpiry: user.vipExpiry
+      }
+    });
+
+  } catch (error) {
+    console.error('Verify payment error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Payment verification failed',
+      error: error.message
+    });
   }
 });
 

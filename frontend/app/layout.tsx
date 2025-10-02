@@ -41,8 +41,9 @@ export default function RootLayout({
   return (
         <html lang="en">
           <head>
-            <script src="https://accounts.google.com/gsi/client" async defer></script>
-            <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1881146103066218" crossOrigin="anonymous"></script>
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1881146103066218" crossOrigin="anonymous"></script>
+        <script src="https://checkout.razorpay.com/v1/checkout.js" async></script>
             <script
               dangerouslySetInnerHTML={{
                 __html: `

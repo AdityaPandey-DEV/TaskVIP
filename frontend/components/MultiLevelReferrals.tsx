@@ -172,7 +172,7 @@ export default function MultiLevelReferrals() {
               Level 2 ({vipRates.level2.all}%), Level 3 ({vipRates.level3.all}%)
               {user.vipLevel < 3 && (
                 <span className="block text-yellow-200 text-sm mt-1">
-                  💡 Upgrade to VIP 3 for 50% Level 1 commissions!
+                  💡 Upgrade to Gold VIP for 50% Level 1 commissions!
                 </span>
               )}
             </>
@@ -342,15 +342,15 @@ export default function MultiLevelReferrals() {
                               <div className="text-lg font-bold text-gray-800">{vipRates.level1.nonVip}%</div>
                             </div>
                             <div className="bg-white rounded p-2 text-center">
-                              <div className="font-medium text-blue-600">VIP 1</div>
+                              <div className="font-medium text-blue-600">Bronze</div>
                               <div className="text-lg font-bold text-blue-800">{vipRates.level1.vip1}%</div>
                             </div>
                             <div className="bg-white rounded p-2 text-center">
-                              <div className="font-medium text-purple-600">VIP 2</div>
+                              <div className="font-medium text-purple-600">Silver</div>
                               <div className="text-lg font-bold text-purple-800">{vipRates.level1.vip2}%</div>
                             </div>
                             <div className="bg-white rounded p-2 text-center">
-                              <div className="font-medium text-yellow-600">VIP 3</div>
+                              <div className="font-medium text-yellow-600">Gold</div>
                               <div className="text-lg font-bold text-yellow-800">{vipRates.level1.vip3}%</div>
                             </div>
                           </div>
@@ -382,7 +382,7 @@ export default function MultiLevelReferrals() {
                   <div className="mt-4 p-3 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg text-white">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="font-semibold">Upgrade to VIP 3 for Maximum Earnings!</div>
+                        <div className="font-semibold">Upgrade to Gold VIP for Maximum Earnings!</div>
                         <div className="text-sm opacity-90">Get 50% commission from direct referrals</div>
                       </div>
                       <div className="text-right">
