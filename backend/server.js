@@ -76,6 +76,19 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// AdMob configuration check endpoint
+app.get('/api/admob/config', (req, res) => {
+  const admobConfig = {
+    appId: process.env.ADMOB_APP_ID || null,
+    publisherId: process.env.ADMOB_PUBLISHER_ID || null,
+    rewardedAdUnitId: process.env.ADMOB_REWARDED_AD_UNIT_ID || null,
+    configured: !!(process.env.ADMOB_APP_ID && process.env.ADMOB_PUBLISHER_ID && process.env.ADMOB_REWARDED_AD_UNIT_ID),
+    timestamp: new Date().toISOString()
+  };
+  
+  res.json(admobConfig);
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
