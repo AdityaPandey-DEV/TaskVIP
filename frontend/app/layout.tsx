@@ -3,7 +3,6 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { Toaster } from 'react-hot-toast'
-import { AuthenticatedAdScript } from '@/components/AuthenticatedAdScript'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -32,9 +31,6 @@ export const metadata: Metadata = {
     width: 'device-width',
     initialScale: 1,
   },
-  other: {
-    'monetag': '6bdb669bae18ef01035af9e5c0cb6fe1',
-  },
 }
 
 export default function RootLayout({
@@ -49,7 +45,6 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <AuthProvider>
-          <AuthenticatedAdScript />
           {children}
           <Toaster
             position="top-right"
