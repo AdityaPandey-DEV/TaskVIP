@@ -20,9 +20,16 @@ interface RewardTask {
 
 interface UserCoins {
   balance: number
-  totalEarned: number
-  todayEarned: number
-  dailyLimit: number
+  stats?: {
+    totalEarned: number
+    todayEarned: number
+    dailyLimit: number
+  }
+  conversionRate?: {
+    coinsPerRupee: number
+    rupeesPerCoin: number
+    minimumWithdrawal: number
+  }
 }
 
 export function RewardSystem() {
@@ -30,9 +37,11 @@ export function RewardSystem() {
   const [tasks, setTasks] = useState<RewardTask[]>([])
   const [coins, setCoins] = useState<UserCoins>({
     balance: 0,
-    totalEarned: 0,
-    todayEarned: 0,
-    dailyLimit: 1000
+    stats: {
+      totalEarned: 0,
+      todayEarned: 0,
+      dailyLimit: 1000
+    }
   })
   const [loading, setLoading] = useState(true)
 
@@ -158,9 +167,9 @@ export function RewardSystem() {
           <div className="mb-3 sm:mb-0">
             <h2 className="text-xl lg:text-2xl font-bold mb-2">💰 Your Coins</h2>
             <div className="space-y-1">
-              <p className="text-base lg:text-lg">Balance: <span className="font-bold">{coins.balance.toLocaleString()}</span> coins</p>
-              <p className="text-sm opacity-90">Today: {coins.todayEarned}/{coins.dailyLimit} coins</p>
-              <p className="text-sm opacity-90">Total Earned: {coins.totalEarned.toLocaleString()} coins</p>
+              <p className="text-base lg:text-lg">Balance: <span className="font-bold">{coins.balance?.toLocaleString() || '0'}</span> coins</p>
+              <p className="text-sm opacity-90">Today: {coins.stats?.todayEarned || 0}/{coins.stats?.dailyLimit || 1000} coins</p>
+              <p className="text-sm opacity-90">Total Earned: {coins.stats?.totalEarned?.toLocaleString() || '0'} coins</p>
             </div>
           </div>
           <div className="text-center sm:text-right">
@@ -177,12 +186,12 @@ export function RewardSystem() {
         <div className="mt-4">
           <div className="flex justify-between text-sm mb-1">
             <span>Daily Progress</span>
-            <span>{Math.round((coins.todayEarned / coins.dailyLimit) * 100)}%</span>
+            <span>{Math.round(((coins.stats?.todayEarned || 0) / (coins.stats?.dailyLimit || 1000)) * 100)}%</span>
           </div>
           <div className="w-full bg-white bg-opacity-20 rounded-full h-2">
             <div 
               className="bg-white h-2 rounded-full transition-all duration-300"
-              style={{ width: `${Math.min((coins.todayEarned / coins.dailyLimit) * 100, 100)}%` }}
+              style={{ width: `${Math.min(((coins.stats?.todayEarned || 0) / (coins.stats?.dailyLimit || 1000)) * 100, 100)}%` }}
             ></div>
           </div>
         </div>
