@@ -153,20 +153,20 @@ export function RewardSystem() {
   return (
     <div className="space-y-6">
       {/* Coin Balance Card */}
-      <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg shadow-lg p-6 text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">💰 Your Coins</h2>
+      <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg shadow-lg p-4 lg:p-6 text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-3 sm:mb-0">
+            <h2 className="text-xl lg:text-2xl font-bold mb-2">💰 Your Coins</h2>
             <div className="space-y-1">
-              <p className="text-lg">Balance: <span className="font-bold">{coins.balance.toLocaleString()}</span> coins</p>
+              <p className="text-base lg:text-lg">Balance: <span className="font-bold">{coins.balance.toLocaleString()}</span> coins</p>
               <p className="text-sm opacity-90">Today: {coins.todayEarned}/{coins.dailyLimit} coins</p>
               <p className="text-sm opacity-90">Total Earned: {coins.totalEarned.toLocaleString()} coins</p>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-3xl mb-2">🪙</div>
+          <div className="text-center sm:text-right">
+            <div className="text-2xl lg:text-3xl mb-2">🪙</div>
             {user?.vipLevel > 0 && (
-              <div className="bg-white bg-opacity-20 rounded-full px-3 py-1 text-sm">
+              <div className="bg-white bg-opacity-20 rounded-full px-2 py-1 text-xs lg:text-sm inline-block">
                 VIP {user.vipLevel} • {getVipMultiplier()}x
               </div>
             )}
@@ -189,8 +189,8 @@ export function RewardSystem() {
       </div>
 
       {/* Reward Tasks */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h3 className="text-xl font-bold mb-4">🎯 Available Tasks</h3>
+      <div className="bg-white rounded-lg shadow-sm p-4 lg:p-6">
+        <h3 className="text-lg lg:text-xl font-bold mb-4">🎯 Available Tasks</h3>
         
         {tasks.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
@@ -201,19 +201,19 @@ export function RewardSystem() {
         ) : (
           <div className="space-y-4">
             {tasks.map(task => (
-              <div key={task.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-2xl">{getTaskIcon(task.type)}</span>
-                      <div>
-                        <h4 className="font-semibold text-lg">{task.title}</h4>
-                        <p className="text-gray-600 text-sm">{task.description}</p>
+              <div key={task.id} className="border rounded-lg p-3 lg:p-4 hover:shadow-md transition-shadow">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start gap-2 lg:gap-3 mb-2">
+                      <span className="text-xl lg:text-2xl flex-shrink-0">{getTaskIcon(task.type)}</span>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-semibold text-base lg:text-lg truncate">{task.title}</h4>
+                        <p className="text-gray-600 text-sm line-clamp-2">{task.description}</p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-4 text-sm">
-                      <span className="flex items-center gap-1">
+                    <div className="flex flex-wrap items-center gap-2 lg:gap-4 text-xs lg:text-sm">
+                      <span className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-full">
                         <span className="text-yellow-500">🪙</span>
                         <span className="font-medium">{task.coinReward}</span>
                         {user?.vipLevel > 0 && (
@@ -221,28 +221,29 @@ export function RewardSystem() {
                             (+{Math.round(task.coinReward * (getVipMultiplier() - 1))})
                           </span>
                         )}
-                        coins
+                        <span className="hidden sm:inline">coins</span>
                       </span>
                       
                       <span className={`px-2 py-1 rounded-full text-xs ${getDifficultyColor(task.difficulty)}`}>
                         {task.difficulty}
                       </span>
                       
-                      <span className="text-gray-500">
-                        ⏱️ {task.estimatedTime}
+                      <span className="text-gray-500 hidden sm:flex items-center gap-1">
+                        <span>⏱️</span>
+                        <span>{task.estimatedTime}</span>
                       </span>
                       
-                      <span className="text-gray-500">
+                      <span className="text-gray-500 text-xs">
                         {task.completedToday}/{task.dailyLimit} today
                       </span>
                     </div>
                   </div>
                   
-                  <div className="ml-4">
+                  <div className="mt-3 lg:mt-0 lg:ml-4 flex-shrink-0">
                     <button
                       onClick={() => completeTask(task.id)}
                       disabled={!task.isAvailable || task.completedToday >= task.dailyLimit}
-                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      className={`w-full lg:w-auto px-4 lg:px-6 py-2 rounded-lg font-medium text-sm transition-colors ${
                         task.isAvailable && task.completedToday < task.dailyLimit
                           ? 'bg-blue-600 text-white hover:bg-blue-700'
                           : 'bg-gray-200 text-gray-500 cursor-not-allowed'
@@ -261,19 +262,19 @@ export function RewardSystem() {
 
       {/* Withdrawal Info */}
       <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-        <div className="flex items-start gap-3">
-          <div className="text-2xl">💸</div>
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+          <div className="text-2xl flex-shrink-0">💸</div>
+          <div className="flex-1 min-w-0">
             <h4 className="font-semibold text-blue-900 mb-1">Cash Out Your Coins</h4>
             <p className="text-blue-700 text-sm mb-2">
               Exchange your coins for real money via Paytm, UPI, or PayPal
             </p>
-            <div className="text-sm text-blue-600">
+            <div className="text-sm text-blue-600 space-y-1">
               <p>• 1000 coins = ₹10</p>
               <p>• Minimum withdrawal: ₹50 (5000 coins)</p>
               <p>• Processing time: 2-7 business days</p>
             </div>
-            <button className="mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors">
+            <button className="mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors w-full sm:w-auto">
               Withdraw Coins
             </button>
           </div>

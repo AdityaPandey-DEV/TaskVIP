@@ -89,6 +89,14 @@
     @apply transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg;
   }
   
+  /* Text truncation */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
   .btn-success {
     @apply bg-success-600 text-white hover:bg-success-700 focus:ring-success-500;
   }
