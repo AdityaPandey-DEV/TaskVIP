@@ -11,7 +11,8 @@
     "start": "cd backend && npm start",
     "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "test-keep-alive": "node scripts/test-keep-alive.js",
-    "health-check": "cd backend && node healthcheck.js"
+    "health-check": "cd backend && node healthcheck.js",
+    "generate-env": "node scripts/generate-env-vars.js"
   },
   "keywords": ["referral", "earn", "vip", "tasks", "rewards"],
   "author": "TaskVIP Team",
