@@ -13,24 +13,37 @@ export const admobConfig = {
   testMode: process.env.NODE_ENV === 'development'
 };
 
-// Track if AdMob has been initialized to prevent duplicate calls
-let admobInitialized = false;
+// Global flag to track AdMob initialization across all instances
+declare global {
+  interface Window {
+    __ADMOB_INITIALIZED__?: boolean;
+  }
+}
 
 export const initializeAdMob = () => {
-  if (typeof window !== 'undefined' && !admobInitialized) {
+  if (typeof window === 'undefined') {
+    console.log('🎬 AdMob: Window not available (SSR)');
+    return;
+  }
+
+  // Check if AdMob has already been initialized globally
+  if (window.__ADMOB_INITIALIZED__) {
+    console.log('🎬 AdMob already initialized globally, skipping...');
+    return;
+  }
+
+  try {
     // Initialize adsbygoogle array if it doesn't exist
     window.adsbygoogle = window.adsbygoogle || [];
     
-    // Push AdMob configuration only once
-    window.adsbygoogle.push({
-      google_ad_client: admobConfig.appId,
-      enable_page_level_ads: true
-    });
+    // For rewarded video ads, we don't need enable_page_level_ads
+    // The AdSense script in the HTML head is sufficient
+    // Just mark as initialized to prevent duplicate calls
+    window.__ADMOB_INITIALIZED__ = true;
+    console.log('🎬 AdMob initialized successfully - ready for rewarded videos');
     
-    admobInitialized = true;
-    console.log('🎬 AdMob initialized with App ID:', admobConfig.appId);
-  } else if (admobInitialized) {
-    console.log('🎬 AdMob already initialized, skipping...');
+  } catch (error) {
+    console.error('❌ AdMob initialization error:', error);
   }
 };
 
