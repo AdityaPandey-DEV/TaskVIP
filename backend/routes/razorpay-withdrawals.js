@@ -268,12 +268,12 @@ router.post('/create', authenticateToken, async (req, res) => {
     }
     
     const creditsRequired = amount * 10; // 10 credits = ₹1
-    const availableCredits = user.creditsReady || user.availableCredits || 0;
+    const availableCredits = user.coinBalance || 0;
     
     if (availableCredits < creditsRequired) {
       return res.status(400).json({
         success: false,
-        message: 'Insufficient credits balance',
+        message: 'Insufficient coin balance',
         required: creditsRequired,
         available: availableCredits
       });
@@ -335,16 +335,9 @@ router.post('/create', authenticateToken, async (req, res) => {
     
     await withdrawal.save();
     
-    // Deduct credits from user balance (hold them)
-    const updateQuery = {};
-    if (user.creditsReady) {
-      updateQuery.creditsReady = -creditsRequired;
-    } else {
-      updateQuery.availableCredits = -creditsRequired;
-    }
-    
+    // Deduct coins from user balance (hold them)
     await User.findByIdAndUpdate(userId, {
-      $inc: updateQuery
+      $inc: { coinBalance: -creditsRequired }
     });
     
     // Create coin transaction record

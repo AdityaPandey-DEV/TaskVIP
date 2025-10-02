@@ -220,7 +220,7 @@ export default function RazorpayWithdraw() {
       console.log('User balance response:', data) // Debug log
       
       setUserBalance({
-        availableCredits: data.availableCredits || 0,
+        availableCredits: data.coinBalance || 0,
         coinBalance: data.coinBalance || 0,
         totalCredits: data.totalCredits || 0
       })
