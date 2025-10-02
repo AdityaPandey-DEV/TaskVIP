@@ -410,6 +410,14 @@ router.post('/google', async (req, res) => {
       return res.status(400).json({ message: 'Google credential is required' });
     }
 
+    // Check if Google Client ID is configured
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      console.error('GOOGLE_CLIENT_ID environment variable is not set');
+      return res.status(500).json({ 
+        message: 'Google authentication is not configured on the server' 
+      });
+    }
+
     // Verify the Google token
     const ticket = await googleClient.verifyIdToken({
       idToken: credential,
@@ -454,58 +462,116 @@ router.post('/google', async (req, res) => {
         }
       });
     } else {
-      // Create new user with Google data
-      const newUser = new User({
-        email: email.toLowerCase(),
-        firstName: given_name || 'User',
-        lastName: family_name || '',
-        password: 'google-oauth', // Placeholder password for Google users
-        isEmailVerified: true, // Google emails are pre-verified
-        profilePicture: picture,
-        deviceInfo: {
-          ip: req.ip,
-          userAgent: req.get('User-Agent'),
-          deviceId: req.headers['x-device-id'] || 'google-oauth'
-        }
-      });
-
-      await newUser.save();
-
-      // Create referral with default "0000" code
-      try {
-        await Referral.createReferral('0000', newUser._id);
-      } catch (error) {
-        console.error('Error creating referral for Google user:', error);
-        // Don't fail registration if referral creation fails
-      }
-
-      // Generate token
-      const token = generateToken(newUser._id);
-
+      // For new Google users, we need to collect referral code
+      // Return a special response indicating referral code collection is needed
       res.json({
-        token,
-        user: {
-          id: newUser._id,
-          email: newUser.email,
-          firstName: newUser.firstName,
-          lastName: newUser.lastName,
-          referralCode: newUser.referralCode,
-          vipLevel: newUser.vipLevel,
-          vipExpiry: newUser.vipExpiry,
-          isVipActive: newUser.isVipActive(),
-          totalCredits: newUser.totalCredits,
-          availableCredits: newUser.availableCredits,
-          kycStatus: newUser.kycStatus,
-          streak: newUser.streak,
-          badges: newUser.badges,
-          createdAt: newUser.createdAt
-        }
+        needsReferralCode: true,
+        googleUserData: {
+          email: email.toLowerCase(),
+          firstName: given_name || 'User',
+          lastName: family_name || '',
+          picture,
+          email_verified
+        },
+        message: 'Please provide a referral code to complete registration'
       });
     }
 
   } catch (error) {
     console.error('Google authentication error:', error);
     res.status(500).json({ message: 'Google authentication failed' });
+  }
+});
+
+// @route   POST /api/auth/google/complete
+// @desc    Complete Google OAuth registration with referral code
+// @access  Public
+router.post('/google/complete', [
+  body('googleUserData').isObject(),
+  body('referralCode').optional().trim()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ 
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { googleUserData, referralCode } = req.body;
+    const { email, firstName, lastName, picture } = googleUserData;
+
+    // Use default referral code "0000" if none provided
+    const finalReferralCode = referralCode || '0000';
+
+    // Validate referral code
+    const isValidReferral = await Referral.isValidReferral(finalReferralCode, null);
+    if (!isValidReferral) {
+      return res.status(400).json({ 
+        message: 'Invalid referral code' 
+      });
+    }
+
+    // Check if user already exists (double-check)
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(400).json({ 
+        message: 'User already exists with this email' 
+      });
+    }
+
+    // Create new user with Google data
+    const newUser = new User({
+      email: email.toLowerCase(),
+      firstName,
+      lastName,
+      password: 'google-oauth', // Placeholder password for Google users
+      isEmailVerified: true, // Google emails are pre-verified
+      profilePicture: picture,
+      deviceInfo: {
+        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+        deviceId: req.headers['x-device-id'] || 'google-oauth'
+      }
+    });
+
+    await newUser.save();
+
+    // Create referral
+    try {
+      await Referral.createReferral(finalReferralCode, newUser._id);
+    } catch (error) {
+      console.error('Error creating referral for Google user:', error);
+      // Don't fail registration if referral creation fails
+    }
+
+    // Generate token
+    const token = generateToken(newUser._id);
+
+    res.json({
+      token,
+      user: {
+        id: newUser._id,
+        email: newUser.email,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        referralCode: newUser.referralCode,
+        vipLevel: newUser.vipLevel,
+        vipExpiry: newUser.vipExpiry,
+        isVipActive: newUser.isVipActive(),
+        totalCredits: newUser.totalCredits,
+        availableCredits: newUser.availableCredits,
+        kycStatus: newUser.kycStatus,
+        streak: newUser.streak,
+        badges: newUser.badges,
+        createdAt: newUser.createdAt
+      }
+    });
+
+  } catch (error) {
+    console.error('Google complete registration error:', error);
+    res.status(500).json({ message: 'Failed to complete Google registration' });
   }
 });
 

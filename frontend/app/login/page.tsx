@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { Eye, EyeOff, Mail, Lock, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { GoogleReferralForm } from '@/components/GoogleReferralForm'
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -14,6 +15,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [showGoogleReferralForm, setShowGoogleReferralForm] = useState(false)
+  const [googleUserData, setGoogleUserData] = useState(null)
   const { login, googleLogin } = useAuth()
   const router = useRouter()
 
@@ -40,8 +43,13 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true)
     try {
+      // Check if Google Client ID is configured
+      if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
+        throw new Error('Google Sign-In is not configured. Please set NEXT_PUBLIC_GOOGLE_CLIENT_ID environment variable.')
+      }
+
       // Initialize Google Sign-In
-      if (typeof window !== 'undefined' && window.google && process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
+      if (typeof window !== 'undefined' && window.google) {
         window.google.accounts.id.initialize({
           client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
           callback: handleGoogleCallback
@@ -49,11 +57,11 @@ export default function LoginPage() {
         
         window.google.accounts.id.prompt()
       } else {
-        throw new Error('Google Sign-In not available. Please check configuration.')
+        throw new Error('Google Sign-In library not loaded. Please refresh the page.')
       }
     } catch (error) {
       console.error('Google Sign-In error:', error)
-      alert('Google Sign-In is not available. Please use email/password.')
+      alert(`Google Sign-In Error: ${error.message}`)
     } finally {
       setGoogleLoading(false)
     }
@@ -61,7 +69,13 @@ export default function LoginPage() {
 
   const handleGoogleCallback = async (response: any) => {
     try {
-      await googleLogin(response.credential)
+      const result = await googleLogin(response.credential)
+      
+      // Check if we need to show referral form for new users
+      if (result && result.needsReferralCode) {
+        setGoogleUserData(result.googleUserData)
+        setShowGoogleReferralForm(true)
+      }
     } catch (error) {
       console.error('Google callback error:', error)
       // Error handling is done in the googleLogin function
@@ -214,6 +228,18 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      {/* Google Referral Form Modal */}
+      {showGoogleReferralForm && googleUserData && (
+        <GoogleReferralForm
+          googleUserData={googleUserData}
+          onCancel={() => {
+            setShowGoogleReferralForm(false)
+            setGoogleUserData(null)
+            setGoogleLoading(false)
+          }}
+        />
+      )}
     </div>
   )
 }

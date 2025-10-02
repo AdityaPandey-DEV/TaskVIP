@@ -26,7 +26,8 @@ interface AuthContextType {
   user: User | null
   loading: boolean
   login: (email: string, password: string) => Promise<void>
-  googleLogin: (credential: string) => Promise<void>
+  googleLogin: (credential: string) => Promise<any>
+  googleCompleteRegistration: (googleUserData: any, referralCode?: string) => Promise<void>
   register: (userData: RegisterData) => Promise<void>
   logout: () => void
   updateUser: (userData: Partial<User>) => void
@@ -118,15 +119,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await response.json()
 
       if (response.ok) {
-        Cookies.set('token', data.token, { expires: 7 })
-        setUser(data.user)
-        toast.success('Google Sign-In successful!')
-        router.push('/dashboard')
+        if (data.needsReferralCode) {
+          // New user needs to provide referral code
+          return data // Return the data so the component can handle the referral form
+        } else {
+          // Existing user, complete login
+          Cookies.set('token', data.token, { expires: 7 })
+          setUser(data.user)
+          toast.success('Google Sign-In successful!')
+          router.push('/dashboard')
+        }
       } else {
         throw new Error(data.message || 'Google Sign-In failed')
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Google Sign-In failed')
+      throw error
+    }
+  }
+
+  const googleCompleteRegistration = async (googleUserData: any, referralCode?: string) => {
+    try {
+      const response = await fetch('/api/auth/google/complete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          googleUserData,
+          referralCode: referralCode || '0000'
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        Cookies.set('token', data.token, { expires: 7 })
+        setUser(data.user)
+        toast.success('Google registration completed successfully!')
+        router.push('/dashboard')
+      } else {
+        throw new Error(data.message || 'Google registration failed')
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Google registration failed')
       throw error
     }
   }
@@ -175,6 +211,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     login,
     googleLogin,
+    googleCompleteRegistration,
     register,
     logout,
     updateUser
