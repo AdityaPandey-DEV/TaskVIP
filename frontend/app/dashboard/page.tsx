@@ -244,6 +244,24 @@ export default function DashboardPage() {
     }
   }
 
+  const checkUserData = async () => {
+    try {
+      const response = await apiRequest('api/stats/user-check', {
+        headers: getAuthHeaders()
+      })
+      const data = await response.json()
+      console.log('User check data:', data)
+      if (response.ok) {
+        alert(`User data checked! New fields exist: ${JSON.stringify(data.hasNewFields, null, 2)}. Check console for details.`)
+      } else {
+        alert('Failed to check user: ' + data.message)
+      }
+    } catch (error) {
+      console.error('User check error:', error)
+      alert('Error checking user data')
+    }
+  }
+
   // Show loading screen while checking authentication
   if (loading) {
     return (
@@ -424,6 +442,12 @@ export default function DashboardPage() {
                 className="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
               >
                 Test V2
+              </button>
+              <button 
+                onClick={checkUserData}
+                className="px-3 py-1 bg-orange-600 text-white text-xs rounded hover:bg-orange-700"
+              >
+                Check User
               </button>
               
               {user.vipLevel > 0 && (

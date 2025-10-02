@@ -4,19 +4,27 @@ const User = require('../models/User');
 // Verify JWT token
 const authenticateToken = async (req, res, next) => {
   try {
+    console.log('🔐 Auth middleware called for:', req.method, req.path);
     const authHeader = req.headers['authorization'];
+    console.log('🔐 Auth header:', authHeader ? 'Present' : 'Missing');
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
     if (!token) {
+      console.log('❌ No token provided');
       return res.status(401).json({ message: 'Access token required' });
     }
 
+    console.log('🔐 Verifying token...');
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('🔐 Token decoded, userId:', decoded.userId);
     const user = await User.findById(decoded.userId).select('-password');
     
     if (!user) {
+      console.log('❌ User not found for token');
       return res.status(401).json({ message: 'Invalid token' });
     }
+
+    console.log('✅ User authenticated:', user.email);
 
     if (!user.isActive) {
       return res.status(401).json({ message: 'Account deactivated' });

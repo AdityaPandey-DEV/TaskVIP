@@ -313,10 +313,12 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get dashboard stats error:', error);
+    console.error('❌ Get dashboard stats error:', error);
+    console.error('❌ Error stack:', error.stack);
     res.status(500).json({ 
       message: 'Failed to get dashboard statistics',
-      error: error.message 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
@@ -412,10 +414,12 @@ router.get('/dashboard-v2', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get dashboard V2 stats error:', error);
+    console.error('❌ Get dashboard V2 stats error:', error);
+    console.error('❌ V2 Error stack:', error.stack);
     res.status(500).json({ 
-      message: 'Failed to get dashboard statistics',
-      error: error.message 
+      message: 'Failed to get dashboard V2 statistics',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
@@ -532,6 +536,75 @@ router.post('/seed-test-data', authenticateToken, async (req, res) => {
     console.error('Seed test data error:', error);
     res.status(500).json({ 
       message: 'Failed to seed test data',
+      error: error.message 
+    });
+  }
+});
+
+// @route   GET /api/stats/user-check
+// @desc    Check current user data and fields
+// @access  Private
+router.get('/user-check', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    console.log('🔍 User check requested for:', userId);
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check which fields exist
+    const userFields = {
+      // Basic fields
+      id: user._id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      
+      // VIP fields
+      vipLevel: user.vipLevel,
+      isVipActive: user.isVipActive,
+      
+      // Old fields
+      totalCredits: user.totalCredits,
+      availableCredits: user.availableCredits,
+      coinBalance: user.coinBalance,
+      dailyCreditsEarned: user.dailyCreditsEarned,
+      
+      // New User model fields (might be undefined)
+      creditsReady: user.creditsReady,
+      totalEarned: user.totalEarned,
+      totalWithdrawn: user.totalWithdrawn,
+      daysActive: user.daysActive,
+      currentStreak: user.currentStreak,
+      dailyProgress: user.dailyProgress,
+      totalTasksAssigned: user.totalTasksAssigned,
+      totalTasksCompleted: user.totalTasksCompleted,
+      totalDirectReferrals: user.totalDirectReferrals,
+      totalIndirectReferrals: user.totalIndirectReferrals,
+      totalDeepReferrals: user.totalDeepReferrals,
+      totalReferralEarnings: user.totalReferralEarnings,
+      level1ReferralUserId: user.level1ReferralUserId,
+      level2ReferralUserId: user.level2ReferralUserId,
+      level3ReferralUserId: user.level3ReferralUserId
+    };
+
+    res.json({
+      message: 'User data retrieved successfully',
+      user: userFields,
+      hasNewFields: {
+        creditsReady: user.creditsReady !== undefined,
+        totalEarned: user.totalEarned !== undefined,
+        daysActive: user.daysActive !== undefined,
+        currentStreak: user.currentStreak !== undefined
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ User check error:', error);
+    res.status(500).json({ 
+      message: 'User check failed',
       error: error.message 
     });
   }
