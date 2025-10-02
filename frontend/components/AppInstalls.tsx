@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { apiRequest } from '@/lib/api'
+import Cookies from 'js-cookie'
 import { 
   Download, 
   Star, 
@@ -87,6 +88,12 @@ export default function AppInstalls() {
   const [processingApp, setProcessingApp] = useState<string | null>(null)
   const [activeTask, setActiveTask] = useState<any>(null)
 
+  // Helper function to get auth headers
+  const getAuthHeaders = () => {
+    const token = Cookies.get('token')
+    return token ? { 'Authorization': `Bearer ${token}` } : {}
+  }
+
   useEffect(() => {
     fetchApps()
     fetchTasks()
@@ -95,7 +102,9 @@ export default function AppInstalls() {
 
   const fetchApps = async () => {
     try {
-      const response = await apiRequest(`api/app-installs/available?category=${selectedCategory}&platform=android&limit=50`)
+      const response = await apiRequest(`api/app-installs/available?category=${selectedCategory}&platform=android&limit=50`, {
+        headers: getAuthHeaders()
+      })
       const data = await response.json()
       if (data.success) {
         setApps(data.data)
@@ -109,7 +118,9 @@ export default function AppInstalls() {
 
   const fetchTasks = async () => {
     try {
-      const response = await apiRequest('api/app-installs/tasks?limit=10')
+      const response = await apiRequest('api/app-installs/tasks?limit=10', {
+        headers: getAuthHeaders()
+      })
       const data = await response.json()
       if (data.success) {
         setTasks(data.data.tasks)
@@ -127,7 +138,9 @@ export default function AppInstalls() {
 
   const fetchCategories = async () => {
     try {
-      const response = await apiRequest('api/app-installs/categories')
+      const response = await apiRequest('api/app-installs/categories', {
+        headers: getAuthHeaders()
+      })
       const data = await response.json()
       if (data.success) {
         setCategories(data.data)

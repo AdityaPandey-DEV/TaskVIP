@@ -56,6 +56,7 @@ export default function RazorpayWithdraw() {
   const [amount, setAmount] = useState('')
   const [payoutDetails, setPayoutDetails] = useState<any>({})
   const [loading, setLoading] = useState(false)
+  const [methodsLoading, setMethodsLoading] = useState(true)
   const [history, setHistory] = useState<WithdrawalHistory[]>([])
   const [showHistory, setShowHistory] = useState(false)
   const [step, setStep] = useState(1) // 1: method selection, 2: details, 3: confirmation
@@ -66,26 +67,123 @@ export default function RazorpayWithdraw() {
   }, [])
 
   const fetchWithdrawalMethods = async () => {
+    setMethodsLoading(true)
     try {
-      const response = await apiRequest('api/razorpay-withdrawals/methods')
+      const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1]
+      const response = await apiRequest('api/razorpay-withdrawals/methods', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
       const data = await response.json()
-      if (data.success) {
+      console.log('Withdrawal methods response:', data) // Debug log
+      
+      if (data.success && data.data) {
         setMethods(data.data)
+      } else {
+        console.error('Invalid response format:', data)
+        // Set fallback methods if API fails
+        setFallbackMethods()
       }
     } catch (error) {
       console.error('Error fetching withdrawal methods:', error)
+      // Set fallback methods if API fails
+      setFallbackMethods()
+    } finally {
+      setMethodsLoading(false)
     }
+  }
+
+  const setFallbackMethods = () => {
+    const fallbackMethods = [
+      {
+        id: 'upi',
+        name: 'UPI Payment',
+        description: 'Pay using UPI ID - Instant & Secure',
+        fee: 1.5,
+        minAmount: 50,
+        processingTime: '1-2 hours',
+        icon: '📱',
+        fields: [
+          { name: 'upiId', label: 'UPI ID', type: 'text', required: true, placeholder: 'yourname@paytm' }
+        ]
+      },
+      {
+        id: 'bank_transfer',
+        name: 'Bank Transfer',
+        description: 'Direct transfer to your bank account',
+        fee: 2.0,
+        minAmount: 50,
+        processingTime: '2-4 hours',
+        icon: '🏦',
+        fields: [
+          { name: 'accountNumber', label: 'Account Number', type: 'text', required: true },
+          { name: 'confirmAccountNumber', label: 'Confirm Account Number', type: 'text', required: true },
+          { name: 'ifscCode', label: 'IFSC Code', type: 'text', required: true },
+          { name: 'accountHolderName', label: 'Account Holder Name', type: 'text', required: true },
+          { name: 'bankName', label: 'Bank Name', type: 'text', required: true }
+        ]
+      },
+      {
+        id: 'wallet',
+        name: 'Digital Wallet',
+        description: 'Transfer to Paytm, PhonePe, etc.',
+        fee: 3.0,
+        minAmount: 100,
+        processingTime: '1-2 hours',
+        icon: '💳',
+        fields: [
+          { 
+            name: 'walletType', 
+            label: 'Wallet Type', 
+            type: 'select', 
+            required: true, 
+            options: [
+              { value: 'paytm', label: 'Paytm' },
+              { value: 'phonepe', label: 'PhonePe' },
+              { value: 'googlepay', label: 'Google Pay' }
+            ]
+          },
+          { name: 'walletNumber', label: 'Mobile Number', type: 'tel', required: true }
+        ]
+      }
+    ]
+    setMethods(fallbackMethods)
   }
 
   const fetchWithdrawalHistory = async () => {
     try {
-      const response = await apiRequest('api/razorpay-withdrawals/history?limit=10')
+      const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1]
+      const response = await apiRequest('api/razorpay-withdrawals/history?limit=10', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (!response.ok) {
+        console.error('Failed to fetch withdrawal history:', response.status)
+        return
+      }
+      
       const data = await response.json()
-      if (data.success) {
+      console.log('Withdrawal history response:', data) // Debug log
+      
+      if (data.success && data.data && data.data.withdrawals) {
         setHistory(data.data.withdrawals)
+      } else {
+        console.error('Invalid withdrawal history response format:', data)
+        setHistory([]) // Set empty array as fallback
       }
     } catch (error) {
       console.error('Error fetching withdrawal history:', error)
+      setHistory([]) // Set empty array as fallback
     }
   }
 
@@ -187,9 +285,13 @@ export default function RazorpayWithdraw() {
     
     setLoading(true)
     try {
+      const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1]
       const response = await apiRequest('api/razorpay-withdrawals/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           amount: parseFloat(amount),
           withdrawalMethod: selectedMethod!.id,
@@ -198,8 +300,9 @@ export default function RazorpayWithdraw() {
       })
       
       const data = await response.json()
+      console.log('Withdrawal submission response:', data) // Debug log
       
-      if (data.success) {
+      if (response.ok && data.success) {
         toast.success('Withdrawal request submitted successfully!')
         setStep(1)
         setSelectedMethod(null)
@@ -300,8 +403,24 @@ export default function RazorpayWithdraw() {
           {step === 1 && (
             <div>
               <h3 className="text-xl font-semibold mb-6">Choose Withdrawal Method</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {methods.map(method => (
+              {methodsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-3 text-gray-600">Loading withdrawal methods...</span>
+                </div>
+              ) : methods.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No withdrawal methods available at the moment.</p>
+                  <button 
+                    onClick={fetchWithdrawalMethods}
+                    className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {methods.map(method => (
                   <div
                     key={method.id}
                     onClick={() => handleMethodSelect(method)}

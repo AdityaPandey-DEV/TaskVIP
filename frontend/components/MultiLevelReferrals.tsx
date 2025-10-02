@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { apiRequest } from '@/lib/api'
 import { Users, TrendingUp, Award, Copy, Share2, Eye, DollarSign } from 'lucide-react'
 import { toast } from 'react-hot-toast'
+import Cookies from 'js-cookie'
 
 interface ReferralStats {
   referrals: {
@@ -57,6 +58,12 @@ export default function MultiLevelReferrals() {
   const [activeTab, setActiveTab] = useState('overview')
   const [showReferralTree, setShowReferralTree] = useState(false)
 
+  // Helper function to get auth headers
+  const getAuthHeaders = () => {
+    const token = Cookies.get('token')
+    return token ? { 'Authorization': `Bearer ${token}` } : {}
+  }
+
   useEffect(() => {
     if (user) {
       fetchReferralStats()
@@ -67,7 +74,9 @@ export default function MultiLevelReferrals() {
 
   const fetchReferralStats = async () => {
     try {
-      const response = await apiRequest('api/multi-level-referrals/stats')
+      const response = await apiRequest('api/multi-level-referrals/stats', {
+        headers: getAuthHeaders()
+      })
       const data = await response.json()
       if (data.success) {
         setStats(data.data)
@@ -79,7 +88,9 @@ export default function MultiLevelReferrals() {
 
   const fetchCommissions = async () => {
     try {
-      const response = await apiRequest('api/multi-level-referrals/commissions?limit=10')
+      const response = await apiRequest('api/multi-level-referrals/commissions?limit=10', {
+        headers: getAuthHeaders()
+      })
       const data = await response.json()
       if (data.success) {
         setCommissions(data.data.commissions)
@@ -93,7 +104,9 @@ export default function MultiLevelReferrals() {
 
   const fetchVipRates = async () => {
     try {
-      const response = await apiRequest('api/multi-level-referrals/vip-rates')
+      const response = await apiRequest('api/multi-level-referrals/vip-rates', {
+        headers: getAuthHeaders()
+      })
       const data = await response.json()
       if (data.success) {
         setVipRates(data.data)
