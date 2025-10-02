@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import Cookies from 'js-cookie'
+import { apiRequest } from '@/lib/api'
 import { 
   Users, 
   Gift, 
@@ -51,18 +53,26 @@ export default function ReferralsPage() {
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    if (user) {
-      fetchReferralStats()
-      fetchReferrals()
+    if (!loading) {
+      if (user) {
+        fetchReferralStats()
+        fetchReferrals()
+      } else {
+        // Redirect to login if not authenticated
+        router.push('/login')
+      }
     }
-  }, [user])
+  }, [user, loading, router])
+
+  const getAuthHeaders = () => {
+    const token = Cookies.get('token')
+    return token ? { 'Authorization': `Bearer ${token}` } : {}
+  }
 
   const fetchReferralStats = async () => {
     try {
-      const response = await fetch('/api/users/referral-stats', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+      const response = await apiRequest('api/users/referral-stats', {
+        headers: getAuthHeaders()
       })
       if (response.ok) {
         const data = await response.json()
@@ -77,10 +87,8 @@ export default function ReferralsPage() {
 
   const fetchReferrals = async () => {
     try {
-      const response = await fetch('/api/referrals/my-referrals', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+      const response = await apiRequest('api/referrals/my-referrals', {
+        headers: getAuthHeaders()
       })
       if (response.ok) {
         const data = await response.json()
