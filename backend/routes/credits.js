@@ -36,7 +36,7 @@ router.get('/balance', authenticateToken, async (req, res) => {
       pendingCredits: totalPending,
       user: {
         totalCredits: user.totalCredits,
-        availableCredits: user.availableCredits,
+        availableCredits: user.coinBalance,
         dailyCreditsEarned: user.dailyCreditsEarned,
         dailyCreditLimit: user.getDailyCreditLimit()
       }
@@ -142,7 +142,7 @@ router.get('/vesting', authenticateToken, async (req, res) => {
       const totalVested = vestingUpdates.reduce((sum, update) => sum + update.amount, 0);
       const user = await User.findById(userId);
       user.totalCredits += totalVested;
-      user.availableCredits += totalVested;
+      user.coinBalance += totalVested;
       await user.save();
     }
 
@@ -240,7 +240,7 @@ router.post('/redeem', authenticateToken, requireKyc, [
     redemption.processedAt = new Date();
 
     // Deduct credits from user
-    user.availableCredits -= amount;
+    user.coinBalance -= amount;
     user.totalCredits -= amount; // This might need adjustment based on business logic
     await user.save();
 
@@ -276,7 +276,7 @@ router.post('/redeem', authenticateToken, requireKyc, [
       },
       user: {
         totalCredits: user.totalCredits,
-        availableCredits: user.availableCredits
+        availableCredits: user.coinBalance
       }
     });
 
@@ -434,11 +434,11 @@ router.post('/transfer', authenticateToken, [
     }
 
     // Check if sender has enough credits
-    const availableCredits = await Credit.getUserAvailableCredits(senderId);
-    if (availableCredits < amount) {
-      return res.status(400).json({ 
+    const sender = await User.findById(senderId);
+    if (sender.coinBalance < amount) {
+      return res.status(400).json({
         message: 'Insufficient credits',
-        available: availableCredits,
+        available: sender.coinBalance,
         requested: amount
       });
     }
@@ -455,14 +455,13 @@ router.post('/transfer', authenticateToken, [
     const netAmount = amount - transferFee;
 
     // Deduct credits from sender
-    const sender = await User.findById(senderId);
-    sender.availableCredits -= amount;
+    sender.coinBalance -= amount;
     sender.totalCredits -= amount;
     await sender.save();
 
     // Add credits to recipient
     const recipientUser = await User.findById(recipient._id);
-    recipientUser.availableCredits += netAmount;
+    recipientUser.coinBalance += netAmount;
     recipientUser.totalCredits += netAmount;
     await recipientUser.save();
 
@@ -507,7 +506,7 @@ router.post('/transfer', authenticateToken, [
       },
       sender: {
         totalCredits: sender.totalCredits,
-        availableCredits: sender.availableCredits
+        availableCredits: sender.coinBalance
       }
     });
 

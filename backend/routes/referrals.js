@@ -284,7 +284,7 @@ router.post('/award-bonus', authenticateToken, [
     // Update referrer's credits
     const referrer = await User.findById(referrerId);
     referrer.totalCredits += amount;
-    referrer.availableCredits += amount;
+    referrer.coinBalance += amount;
     await referrer.save();
 
     res.json({
@@ -296,7 +296,7 @@ router.post('/award-bonus', authenticateToken, [
       },
       referrer: {
         totalCredits: referrer.totalCredits,
-        availableCredits: referrer.availableCredits
+        availableCredits: referrer.coinBalance
       }
     });
 
@@ -459,7 +459,7 @@ router.post('/claim-milestone', authenticateToken, [
     // Update user credits
     const user = await User.findById(userId);
     user.totalCredits += reward;
-    user.availableCredits += reward;
+    user.coinBalance += reward;
     await user.save();
 
     res.json({
@@ -467,7 +467,7 @@ router.post('/claim-milestone', authenticateToken, [
       reward,
       user: {
         totalCredits: user.totalCredits,
-        availableCredits: user.availableCredits
+        availableCredits: user.coinBalance
       }
     });
 

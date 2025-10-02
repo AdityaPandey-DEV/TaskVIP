@@ -227,11 +227,11 @@ router.post('/complete', authenticateToken, [
     user.dailyAdsWatched += 1;
     user.dailyCreditsEarned += creditAmount;
     user.totalCredits += creditAmount;
-    user.availableCredits += creditAmount;
+    user.coinBalance += creditAmount;
     
     // Update withdrawable credits (only if user has earned enough)
     if (user.totalCredits >= 100) {
-      user.withdrawableCredits = user.availableCredits;
+      user.withdrawableCredits = user.coinBalance;
     }
     
     await user.save();
@@ -253,7 +253,7 @@ router.post('/complete', authenticateToken, [
       },
       user: {
         totalCredits: user.totalCredits,
-        availableCredits: user.availableCredits,
+        availableCredits: user.coinBalance,
         withdrawableCredits: user.withdrawableCredits,
         dailyCreditsEarned: user.dailyCreditsEarned,
         dailyAdsWatched: user.dailyAdsWatched,
@@ -311,7 +311,7 @@ router.post('/verify', authenticateToken, [
       // Update user credits with newly vested amount
       const user = await User.findById(userId);
       user.totalCredits += vestedAmount;
-      user.availableCredits += vestedAmount;
+      user.coinBalance += vestedAmount;
       await user.save();
     }
 

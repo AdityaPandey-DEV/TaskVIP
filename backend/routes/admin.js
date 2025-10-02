@@ -257,7 +257,7 @@ router.get('/users', authenticateAdmin, async (req, res) => {
         vipExpiry: user.vipExpiry,
         isVipActive: user.isVipActive(),
         totalCredits: user.totalCredits,
-        availableCredits: user.availableCredits,
+        availableCredits: user.coinBalance,
         kycStatus: user.kycStatus,
         isActive: user.isActive,
         streak: user.streak,
@@ -318,7 +318,7 @@ router.get('/users/:userId', authenticateAdmin, async (req, res) => {
         vipExpiry: user.vipExpiry,
         isVipActive: user.isVipActive(),
         totalCredits: user.totalCredits,
-        availableCredits: user.availableCredits,
+        availableCredits: user.coinBalance,
         kycStatus: user.kycStatus,
         isActive: user.isActive,
         streak: user.streak,
@@ -448,7 +448,7 @@ router.post('/users/:userId/credits', authenticateAdmin, logAdminAction('credit_
 
     // Update user credits
     user.totalCredits += amount;
-    user.availableCredits += amount;
+    user.coinBalance += amount;
     await user.save();
 
     res.json({
@@ -461,7 +461,7 @@ router.post('/users/:userId/credits', authenticateAdmin, logAdminAction('credit_
       },
       user: {
         totalCredits: user.totalCredits,
-        availableCredits: user.availableCredits
+        availableCredits: user.coinBalance
       }
     });
 

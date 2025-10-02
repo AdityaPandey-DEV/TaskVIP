@@ -268,7 +268,7 @@ router.post('/complete/:taskId', authenticateToken, async (req, res) => {
       coinsEarned: actualReward,
       taskCompleted: taskDef.title,
       vipMultiplier,
-      newBalance: (user.availableCredits || 0) + actualReward
+      newBalance: (user.coinBalance || 0) + actualReward
     });
 
   } catch (error) {

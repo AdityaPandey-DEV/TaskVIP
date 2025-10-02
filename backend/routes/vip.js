@@ -179,7 +179,7 @@ router.post('/purchase', authenticateToken, [
 
     // Update user credits
     user.totalCredits += bonusCredits;
-    user.availableCredits += bonusCredits;
+    user.coinBalance += bonusCredits;
     await user.save();
 
     // Process multi-level referral commissions
@@ -224,7 +224,7 @@ router.post('/purchase', authenticateToken, [
         vipLevel: user.vipLevel,
         vipExpiry: user.vipExpiry,
         totalCredits: user.totalCredits,
-        availableCredits: user.availableCredits
+        availableCredits: user.coinBalance
       }
     });
 

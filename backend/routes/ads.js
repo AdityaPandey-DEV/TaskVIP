@@ -316,7 +316,7 @@ router.post('/callback/:networkId', async (req, res) => {
       // Update user credits with newly vested amount
       const user = await User.findById(task.userId);
       user.totalCredits += vestedAmount;
-      user.availableCredits += vestedAmount;
+      user.coinBalance += vestedAmount;
       await user.save();
     }
 
@@ -370,7 +370,7 @@ router.get('/verify/:taskId', authenticateToken, async (req, res) => {
         // Update user credits
         const user = await User.findById(userId);
         user.totalCredits += vestedAmount;
-        user.availableCredits += vestedAmount;
+        user.coinBalance += vestedAmount;
         await user.save();
       }
     }

@@ -52,6 +52,7 @@ interface WithdrawalHistory {
 interface UserBalance {
   availableCredits: number
   coinBalance: number
+  balance: number // Real rupees value
   totalCredits: number
 }
 
@@ -67,6 +68,7 @@ export default function RazorpayWithdraw() {
   const [userBalance, setUserBalance] = useState<UserBalance>({
     availableCredits: 0,
     coinBalance: 0,
+    balance: 0,
     totalCredits: 0
   })
   const [history, setHistory] = useState<WithdrawalHistory[]>([])
@@ -222,6 +224,7 @@ export default function RazorpayWithdraw() {
       setUserBalance({
         availableCredits: data.coinBalance || 0,
         coinBalance: data.coinBalance || 0,
+        balance: data.balance || 0,
         totalCredits: data.totalCredits || 0
       })
     } catch (error) {
@@ -257,7 +260,7 @@ export default function RazorpayWithdraw() {
   }
 
   const getCreditsRequired = () => {
-    return (parseFloat(amount) || 0) * 10 // 10 credits = ₹1
+    return (parseFloat(amount) || 0) * 10 // 10 coins = ₹1
   }
 
   const validateUPI = (upiId: string) => {
@@ -280,7 +283,7 @@ export default function RazorpayWithdraw() {
     
     const amountNum = parseFloat(amount)
     if (amountNum < selectedMethod.minAmount) return false
-    if (amountNum > Math.floor(userBalance.availableCredits / 10)) return false
+    if (amountNum > userBalance.balance) return false
     
     // Validate required fields
     for (const field of selectedMethod.fields) {
@@ -434,7 +437,7 @@ export default function RazorpayWithdraw() {
               </div>
             ) : (
               <>
-                <div className="text-2xl font-bold">₹{Math.floor(userBalance.availableCredits / 10)}</div>
+                <div className="text-2xl font-bold">₹{userBalance.balance}</div>
                 <div className="text-sm text-green-100">Cash Value</div>
               </>
             )}
@@ -548,7 +551,7 @@ export default function RazorpayWithdraw() {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     min={selectedMethod.minAmount}
-                    max={Math.floor(userBalance.availableCredits / 10)}
+                    max={userBalance.balance}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder={`Min ₹${selectedMethod.minAmount}`}
                   />

@@ -102,7 +102,7 @@ router.post('/register', [
         referralCode: user.referralCode,
         vipLevel: user.vipLevel,
         totalCredits: user.totalCredits,
-        availableCredits: user.availableCredits
+        availableCredits: user.coinBalance
       }
     });
 
@@ -174,7 +174,7 @@ router.post('/login', [
         referralCode: user.referralCode,
         vipLevel: user.vipLevel,
         totalCredits: user.totalCredits,
-        availableCredits: user.availableCredits,
+        availableCredits: user.coinBalance,
         isVipActive: user.isVipActive(),
         vipExpiry: user.vipExpiry,
         kycStatus: user.kycStatus
@@ -212,7 +212,7 @@ router.get('/me', authenticateToken, async (req, res) => {
         isVipActive: user.isVipActive(),
         vipBenefits,
         totalCredits: user.totalCredits,
-        availableCredits: user.availableCredits,
+        availableCredits: user.coinBalance,
         dailyCreditsEarned: user.dailyCreditsEarned,
         dailyCreditLimit: user.getDailyCreditLimit(),
         hasReachedDailyLimit: user.hasReachedDailyLimit(),
@@ -458,7 +458,7 @@ router.post('/google', async (req, res) => {
           vipExpiry: user.vipExpiry,
           isVipActive: user.isVipActive(),
           totalCredits: user.totalCredits,
-          availableCredits: user.availableCredits,
+          availableCredits: user.coinBalance,
           kycStatus: user.kycStatus,
           streak: user.streak,
           badges: user.badges,

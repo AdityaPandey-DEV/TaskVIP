@@ -68,6 +68,13 @@ const userSchema = new mongoose.Schema({
     default: 0,
     min: 0
   },
+  balance: {
+    type: Number,
+    default: 0,
+    get: function() {
+      return Math.floor((this.coinBalance || 0) / 10);
+    }
+  },
   withdrawableCredits: {
     type: Number,
     default: 0
@@ -280,6 +287,24 @@ userSchema.statics.ensureDefaultReferralUser = async function() {
   } catch (error) {
     console.error('Error creating default referral user:', error);
   }
+};
+
+// Method to migrate old balance fields to coinBalance
+userSchema.methods.migrateToCoinBalance = function() {
+  // If coinBalance is 0 but availableCredits or creditsReady has value, migrate
+  if (this.coinBalance === 0 || this.coinBalance === undefined) {
+    const availableBalance = this.availableCredits || this.creditsReady || 0;
+    if (availableBalance > 0) {
+      this.coinBalance = availableBalance;
+      console.log(`Migrated balance for user ${this._id}: ${availableBalance} -> coinBalance`);
+    }
+  }
+  return this;
+};
+
+// Method to get balance in rupees
+userSchema.methods.getBalanceInRupees = function() {
+  return Math.floor((this.coinBalance || 0) / 10);
 };
 
 // Compare password method

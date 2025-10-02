@@ -163,11 +163,11 @@ router.post('/award-daily', authenticateToken, [
     // Update referrer's credits
     const referrer = await User.findById(referrerId);
     referrer.totalCredits += commission;
-    referrer.availableCredits += commission;
+    referrer.coinBalance += commission;
     
     // Update withdrawable credits if eligible
     if (referrer.totalCredits >= 100) {
-      referrer.withdrawableCredits = referrer.availableCredits;
+      referrer.withdrawableCredits = referrer.coinBalance;
     }
     
     await referrer.save();
@@ -182,7 +182,7 @@ router.post('/award-daily', authenticateToken, [
       },
       referrer: {
         totalCredits: referrer.totalCredits,
-        availableCredits: referrer.availableCredits,
+        availableCredits: referrer.coinBalance,
         withdrawableCredits: referrer.withdrawableCredits
       }
     });

@@ -159,10 +159,10 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Migrate old balance fields to coinBalance
+    user.migrateToCoinBalance();
+    
     // If new stats fields are empty, populate them from old fields
-    if (!user.creditsReady && user.availableCredits) {
-      user.creditsReady = user.availableCredits;
-    }
     if (!user.totalEarned && user.totalCredits) {
       user.totalEarned = user.totalCredits;
     }
@@ -174,13 +174,13 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
     }
     
     // Save if we updated anything
-    if (!user.creditsReady || !user.totalEarned || !user.daysActive || !user.currentStreak) {
+    if (user.isModified() || !user.totalEarned || !user.daysActive || !user.currentStreak) {
       await user.save();
     }
 
-    // Return simple stats directly from user
+    // Return simple stats directly from user using coinBalance as primary field
     res.json({
-      availableCredits: user.creditsReady || 0,
+      availableCredits: user.coinBalance || 0, // For backward compatibility
       totalCredits: user.totalEarned || 0,
       dailyCreditsEarned: user.dailyCreditsEarned || 0,
       dailyCreditLimit: user.getDailyCreditLimit(),
@@ -189,6 +189,7 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
       totalTasks: user.totalTasksAssigned || 0,
       completedTasks: user.totalTasksCompleted || 0,
       coinBalance: user.coinBalance || 0,
+      balance: user.getBalanceInRupees(), // Real rupees value
       daysActive: user.daysActive || 0,
       
       referralStats: {

@@ -44,6 +44,7 @@ interface DashboardStats {
   totalTasks: number
   completedTasks: number
   coinBalance: number
+  balance: number
   totalCoinsEarned: number
   referralStats: {
     totalReferrals: number
@@ -102,7 +103,7 @@ export default function DashboardPage() {
       if (statsResponse.ok) {
         const data = await statsResponse.json()
         setStats({
-          availableCredits: data.availableCredits,
+               availableCredits: data.coinBalance || data.availableCredits,
           totalCredits: data.totalCredits,
           dailyCreditsEarned: data.dailyCreditsEarned,
           dailyCreditLimit: data.dailyCreditLimit,
@@ -111,6 +112,7 @@ export default function DashboardPage() {
           totalTasks: data.totalTasks,
           completedTasks: data.completedTasks,
           coinBalance: data.coinBalance,
+          balance: data.balance || 0,
           totalCoinsEarned: 0, // Not used anymore
           referralStats: data.referralStats
         })

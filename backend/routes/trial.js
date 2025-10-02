@@ -76,7 +76,7 @@ router.post('/claim-reward', authenticateToken, async (req, res) => {
 
     // Update user credits
     user.totalCredits += trialReward;
-    user.availableCredits += trialReward;
+    user.coinBalance += trialReward;
     user.trialRewardClaimed = true;
     await user.save();
 
@@ -85,7 +85,7 @@ router.post('/claim-reward', authenticateToken, async (req, res) => {
       reward: trialReward,
       user: {
         totalCredits: user.totalCredits,
-        availableCredits: user.availableCredits,
+        availableCredits: user.coinBalance,
         withdrawableCredits: user.withdrawableCredits
       }
     });
