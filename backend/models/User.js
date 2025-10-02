@@ -190,7 +190,7 @@ userSchema.statics.ensureDefaultReferralUser = async function() {
         phone: '+919999999999',
         password: 'system123456', // This will be hashed
         referralCode: '0000',
-        vipLevel: 5, // Max VIP level
+        vipLevel: 3, // Max VIP level
         isEmailVerified: true,
         totalCredits: 0,
         availableCredits: 0
