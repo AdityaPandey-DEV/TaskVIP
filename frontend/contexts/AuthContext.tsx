@@ -55,39 +55,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkAuth = async () => {
     try {
       const token = Cookies.get('token')
-      console.log('Checking auth, token found:', !!token) // Debug log
-      
       if (!token) {
-        console.log('No token found, user not authenticated')
         setLoading(false)
         return
       }
 
-      console.log('Making request to /api/auth/me') // Debug log
       const response = await fetch('/api/auth/me', {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include' // Include cookies in request
+          'Authorization': `Bearer ${token}`
+        }
       })
-
-      console.log('Auth check response status:', response.status) // Debug log
 
       if (response.ok) {
         const data = await response.json()
-        console.log('Auth check successful, user:', data.user.email) // Debug log
         setUser(data.user)
       } else {
-        const errorData = await response.text()
-        console.log('Auth check failed:', response.status, errorData) // Debug log
         Cookies.remove('token')
-        setUser(null)
       }
     } catch (error) {
-      console.error('Auth check failed with error:', error)
+      console.error('Auth check failed:', error)
       Cookies.remove('token')
-      setUser(null)
     } finally {
       setLoading(false)
     }
@@ -106,15 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await response.json()
 
       if (response.ok) {
-        // Set cookie with more persistent settings
-        Cookies.set('token', data.token, { 
-          expires: 7, 
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          path: '/'
-        })
+        Cookies.set('token', data.token, { expires: 7 })
         setUser(data.user)
-        console.log('Login successful, token set:', !!data.token) // Debug log
         toast.success('Login successful!')
         router.push('/dashboard')
       } else {
@@ -144,14 +124,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return data // Return the data so the component can handle the referral form
         } else {
           // Existing user, complete login
-          Cookies.set('token', data.token, { 
-            expires: 7, 
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            path: '/'
-          })
+          Cookies.set('token', data.token, { expires: 7 })
           setUser(data.user)
-          console.log('Google login successful, token set:', !!data.token) // Debug log
           toast.success('Google Sign-In successful!')
           router.push('/dashboard')
         }
@@ -180,14 +154,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await response.json()
 
       if (response.ok) {
-        Cookies.set('token', data.token, { 
-          expires: 7, 
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          path: '/'
-        })
+        Cookies.set('token', data.token, { expires: 7 })
         setUser(data.user)
-        console.log('Google registration successful, token set:', !!data.token) // Debug log
         toast.success('Google registration completed successfully!')
         router.push('/dashboard')
       } else {
@@ -212,14 +180,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await response.json()
 
       if (response.ok) {
-        Cookies.set('token', data.token, { 
-          expires: 7, 
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          path: '/'
-        })
+        Cookies.set('token', data.token, { expires: 7 })
         setUser(data.user)
-        console.log('Registration successful, token set:', !!data.token) // Debug log
         toast.success('Registration successful!')
         router.push('/dashboard')
       } else {
@@ -232,8 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = () => {
-    console.log('Logging out user') // Debug log
-    Cookies.remove('token', { path: '/' })
+    Cookies.remove('token')
     setUser(null)
     toast.success('Logged out successfully')
     router.push('/')
