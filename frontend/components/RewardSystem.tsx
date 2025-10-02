@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import Cookies from 'js-cookie'
 import { apiRequest } from '@/lib/api'
 import { showRewardedAd } from '@/lib/admob'
+import { showPropellerVideoAd, initializePropellerAds } from '@/lib/propellerads'
 import { PlayCircle, DollarSign, Gift, CheckCircle, Loader2, Clock, Zap, Repeat } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
@@ -59,7 +60,8 @@ export function RewardSystem() {
     if (user) {
       fetchRewardTasks()
       fetchUserCoins()
-      // AdMob is now initialized globally in layout
+      // Initialize ad networks
+      initializePropellerAds()
     }
   }, [user])
 
@@ -187,14 +189,11 @@ export function RewardSystem() {
     setCompletingTask(taskId)
     
     try {
-      // Show enhanced video ad experience
-      toast('Loading premium video ad...', { icon: '🎬' })
+      // Show ad network selection or PropellerAds directly
+      toast('Loading video ad...', { icon: '🚀' })
       
-      // Simulate ad loading
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Show the enhanced video dialog
-      const watchVideo = await showRewardedAd()
+      // Try PropellerAds first (instant approval, real revenue)
+      const watchVideo = await showPropellerVideoAd()
       
       if (watchVideo) {
         // Award coins after video completion
