@@ -32,6 +32,7 @@ import {
 import Link from 'next/link'
 import { RewardSystem } from '@/components/RewardSystem'
 import MultiLevelReferrals from '@/components/MultiLevelReferrals'
+import AppInstalls from '@/components/AppInstalls'
 
 interface DashboardStats {
   totalCredits: number
@@ -436,6 +437,26 @@ export default function DashboardPage() {
               </div>
               <div className="p-4 lg:p-6">
                 <RewardSystem />
+              </div>
+            </div>
+
+            {/* App Install System */}
+            <div className="bg-white rounded-xl lg:rounded-2xl shadow-sm border border-slate-200">
+              <div className="border-b border-slate-200 p-4 lg:p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg lg:rounded-xl flex items-center justify-center">
+                      <Smartphone className="w-4 h-4 lg:w-5 lg:h-5 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg lg:text-xl font-bold text-slate-800">App Install Rewards</h2>
+                      <p className="text-sm text-slate-600">Install apps and earn coins instantly</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 lg:p-6">
+                <AppInstalls />
               </div>
             </div>
 

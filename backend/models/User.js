@@ -63,6 +63,11 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  coinBalance: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
   withdrawableCredits: {
     type: Number,
     default: 0

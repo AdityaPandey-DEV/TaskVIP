@@ -90,6 +90,7 @@ app.use('/api/offers', require('./routes/offers'));
 app.use('/api/rewards', require('./routes/rewards'));
 app.use('/api/multi-level-referrals', require('./routes/multi-level-referrals')); // Multi-level referral system
 app.use('/api/razorpay-withdrawals', require('./routes/razorpay-withdrawals')); // Razorpay withdrawal system
+app.use('/api/app-installs', require('./routes/app-installs')); // App install system
 app.use('/api/stats', require('./routes/stats'));
 
 // Health check endpoint
