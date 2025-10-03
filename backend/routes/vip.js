@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const VipPurchase = require('../models/VipPurchase');
+const VipPricing = require('../models/VipPricing');
 const Credit = require('../models/Credit');
 const { MultiLevelReferral } = require('../models/MultiLevelReferral');
 const { authenticateToken, requireVip } = require('../middleware/auth');
@@ -21,84 +22,63 @@ const razorpay = new Razorpay({
 // @access  Public
 router.get('/plans', async (req, res) => {
   try {
-    const plans = [
-      {
-        level: 1,
-        name: 'VIP 1',
-        price: 300,
-        currency: 'INR',
-        duration: 30,
-        benefits: {
-          dailyAdsLimit: 20,
-          perAdReward: 1.5,
-          maxDailyEarning: 30,
-          referralBonus: 10,
-          monthlyEarning: 900,
-          features: [
-            '20 ads per day',
-            '₹1.5 per ad reward',
-            '₹30 daily earning cap',
-            '₹10 referral bonus',
-            'Priority support',
-            'Exclusive tasks'
-          ]
-        }
-      },
-      {
-        level: 2,
-        name: 'VIP 2',
-        price: 600,
-        currency: 'INR',
-        duration: 30,
-        benefits: {
-          dailyAdsLimit: 50,
-          perAdReward: 2.0,
-          maxDailyEarning: 100,
-          referralBonus: 10,
-          monthlyEarning: 3000,
-          features: [
-            '50 ads per day',
-            '₹2.0 per ad reward',
-            '₹100 daily earning cap',
-            '₹10 referral bonus',
-            'Priority support',
-            'Exclusive tasks',
-            'Higher reward rates'
-          ]
-        }
-      },
-      {
-        level: 3,
-        name: 'VIP 3',
-        price: 1000,
-        currency: 'INR',
-        duration: 30,
-        benefits: {
-          dailyAdsLimit: 100,
-          perAdReward: 2.5,
-          maxDailyEarning: 250,
-          referralBonus: 10,
-          monthlyEarning: 7500,
-          features: [
-            '100 ads per day',
-            '₹2.5 per ad reward',
-            '₹250 daily earning cap',
-            '₹10 referral bonus',
-            'Priority support',
-            'Exclusive tasks',
-            'Highest reward rates',
-            'Milestone bonuses',
-            'VIP-only offers'
-          ]
-        }
-      }
-    ];
+    const pricing = await VipPricing.getActivePricing();
+    
+    const plans = pricing.map(plan => ({
+      level: plan.level,
+      name: plan.name,
+      price: plan.price,
+      currency: plan.currency,
+      duration: plan.duration,
+      dailyCreditLimitMultiplier: plan.dailyCreditLimitMultiplier,
+      referralBonusMultiplier: plan.referralBonusMultiplier,
+      exclusiveOffers: plan.exclusiveOffers,
+      description: plan.description,
+      features: plan.features,
+      isActive: plan.isActive
+    }));
 
-    res.json({ plans });
-
+    res.json({
+      success: true,
+      plans
+    });
   } catch (error) {
     console.error('Get VIP plans error:', error);
-    res.status(500).json({ message: 'Failed to get VIP plans' });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get VIP plans'
+    });
+  }
+});
+
+// @route   GET /api/vip/levels
+// @desc    Get VIP levels for frontend
+// @access  Public
+router.get('/levels', async (req, res) => {
+  try {
+    const pricing = await VipPricing.getActivePricing();
+    
+    const levels = pricing.map(plan => ({
+      level: plan.level,
+      name: plan.name,
+      price: plan.price,
+      dailyCreditLimitMultiplier: plan.dailyCreditLimitMultiplier,
+      referralBonusMultiplier: plan.referralBonusMultiplier,
+      exclusiveOffers: plan.exclusiveOffers,
+      description: plan.description,
+      features: plan.features
+    }));
+
+    res.json({
+      success: true,
+      levels
+    });
+  } catch (error) {
+    console.error('Get VIP levels error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get VIP levels'
+    });
   }
 });
 
@@ -440,14 +420,8 @@ router.post('/create-order', authenticateToken, [
     const { vipLevel, amount } = req.body;
     const userId = req.user.id;
 
-    // Get VIP level details
-    const vipLevels = {
-      1: { name: 'Bronze', price: 99 },
-      2: { name: 'Silver', price: 199 },
-      3: { name: 'Gold', price: 299 }
-    };
-
-    const selectedVip = vipLevels[vipLevel];
+    // Get VIP level details from database
+    const selectedVip = await VipPricing.getPricingByLevel(vipLevel);
     if (!selectedVip) {
       return res.status(400).json({
         success: false,

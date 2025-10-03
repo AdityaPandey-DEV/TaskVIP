@@ -75,7 +75,7 @@ export function VipBenefits() {
     {
       level: 1,
       name: 'Bronze',
-      price: 99, // ₹99 per month
+      price: 99,
       dailyCreditLimitMultiplier: 1.5,
       referralBonusMultiplier: 1.2,
       exclusiveOffers: true,
@@ -84,7 +84,7 @@ export function VipBenefits() {
     {
       level: 2,
       name: 'Silver',
-      price: 199, // ₹199 per month
+      price: 199,
       dailyCreditLimitMultiplier: 2,
       referralBonusMultiplier: 1.5,
       exclusiveOffers: true,
@@ -93,7 +93,7 @@ export function VipBenefits() {
     {
       level: 3,
       name: 'Gold',
-      price: 299, // ₹299 per month
+      price: 299,
       dailyCreditLimitMultiplier: 3,
       referralBonusMultiplier: 2,
       exclusiveOffers: true,
@@ -328,6 +328,11 @@ export function VipBenefits() {
               <button className="w-full bg-gray-400 text-white py-2 px-4 rounded-lg font-medium" disabled>
                 Lower Tier
               </button>
+            ) : level.level === 0 ? (
+              <button className="w-full bg-green-600 text-white py-2 px-4 rounded-lg font-medium" disabled>
+                <CheckCircle className="w-4 h-4 mr-2 inline" />
+                Acquired
+              </button>
             ) : (
               <button
                 onClick={() => handleUpgrade(level.level)}
@@ -339,8 +344,6 @@ export function VipBenefits() {
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
                     Processing...
                   </>
-                ) : level.price === 0 ? (
-                  'Select Free Plan'
                 ) : (
                   <>
                     <CreditCard className="w-4 h-4 mr-2" />
