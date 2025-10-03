@@ -542,6 +542,87 @@ userSchema.methods.updateActivityStats = function() {
   }
 };
 
+// Ensure all user stats are properly initialized
+userSchema.methods.ensureStatsInitialized = function() {
+  let needsSave = false;
+  
+  // Initialize financial stats
+  if (this.creditsReady === undefined || this.creditsReady === null) {
+    this.creditsReady = this.coinBalance || 0;
+    needsSave = true;
+  }
+  
+  if (this.totalEarned === undefined || this.totalEarned === null) {
+    this.totalEarned = this.totalCredits || 0;
+    needsSave = true;
+  }
+  
+  // Initialize activity stats
+  if (this.daysActive === undefined || this.daysActive === null) {
+    this.daysActive = 1;
+    needsSave = true;
+  }
+  
+  if (this.currentStreak === undefined || this.currentStreak === null) {
+    this.currentStreak = 1;
+    needsSave = true;
+  }
+  
+  if (this.dailyProgress === undefined || this.dailyProgress === null) {
+    this.dailyProgress = 0;
+    needsSave = true;
+  }
+  
+  // Initialize task stats
+  if (this.totalTasksAssigned === undefined || this.totalTasksAssigned === null) {
+    this.totalTasksAssigned = 0;
+    needsSave = true;
+  }
+  
+  if (this.totalTasksCompleted === undefined || this.totalTasksCompleted === null) {
+    this.totalTasksCompleted = 0;
+    needsSave = true;
+  }
+  
+  // Initialize referral stats
+  if (this.totalDirectReferrals === undefined || this.totalDirectReferrals === null) {
+    this.totalDirectReferrals = 0;
+    needsSave = true;
+  }
+  
+  if (this.totalReferralEarnings === undefined || this.totalReferralEarnings === null) {
+    this.totalReferralEarnings = 0;
+    needsSave = true;
+  }
+  
+  return needsSave;
+};
+
+// Update user stats when they earn credits or complete tasks
+userSchema.methods.updateUserStats = function(creditsEarned = 0, tasksCompleted = 0) {
+  // Update financial stats
+  if (creditsEarned > 0) {
+    this.creditsReady += creditsEarned;
+    this.totalEarned += creditsEarned;
+    this.coinBalance += creditsEarned;
+    this.dailyCreditsEarned += creditsEarned;
+    
+    // Update daily progress
+    const dailyLimit = this.getDailyCreditLimit();
+    this.dailyProgress = dailyLimit > 0 ? Math.min((this.dailyCreditsEarned / dailyLimit) * 100, 100) : 0;
+  }
+  
+  // Update task stats
+  if (tasksCompleted > 0) {
+    this.totalTasksCompleted += tasksCompleted;
+  }
+  
+  // Update activity stats
+  this.updateActivityStats();
+  
+  return this.save();
+};
+
 // Update task completion stats
 userSchema.methods.updateTaskStats = function(assigned = 0, completed = 0) {
   this.totalTasksAssigned += assigned;

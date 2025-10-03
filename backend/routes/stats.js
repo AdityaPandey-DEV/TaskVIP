@@ -162,6 +162,12 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
     // Migrate old balance fields to coinBalance
     user.migrateToCoinBalance();
     
+    // Ensure all stats are properly initialized
+    const needsSave = user.ensureStatsInitialized();
+    
+    // Update activity stats (streak, days active)
+    user.updateActivityStats();
+    
     // Check and reset daily stats if it's a new day
     const today = new Date();
     const lastReset = new Date(user.lastDailyReset);
@@ -172,36 +178,50 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
       user.lastDailyReset = today;
     }
     
-    // If new stats fields are empty, populate them from old fields
-    if (!user.totalEarned && user.totalCredits) {
-      user.totalEarned = user.totalCredits;
-    }
-    if (!user.daysActive) {
-      user.daysActive = 1;
-    }
-    if (!user.currentStreak) {
-      user.currentStreak = 1;
-    }
-    
     // Save if we updated anything
-    if (user.isModified() || !user.totalEarned || !user.daysActive || !user.currentStreak) {
+    if (needsSave || user.isModified()) {
       await user.save();
     }
 
-    // Return simple stats directly from user using coinBalance as primary field
+    // Calculate and return comprehensive stats
+    const totalEarned = user.totalEarned || user.totalCredits || 0;
+    const creditsReady = user.creditsReady || user.coinBalance || 0;
+    const dailyProgress = user.dailyProgress || 0;
+    const currentStreak = user.currentStreak || 0;
+    const daysActive = user.daysActive || 0;
+    
+    // Calculate daily progress percentage
+    const dailyLimit = user.getDailyCreditLimit();
+    const dailyEarned = user.dailyCreditsEarned || 0;
+    const calculatedProgress = dailyLimit > 0 ? Math.min((dailyEarned / dailyLimit) * 100, 100) : 0;
+    
+    // Update user's daily progress if it's different
+    if (Math.abs(user.dailyProgress - calculatedProgress) > 0.1) {
+      user.dailyProgress = calculatedProgress;
+      await user.save();
+    }
+
     res.json({
-      availableCredits: user.coinBalance || 0, // For backward compatibility
-      totalCredits: user.totalEarned || 0,
-      dailyCreditsEarned: user.dailyCreditsEarned || 0,
-      dailyCreditLimit: user.getDailyCreditLimit(),
-      dailyProgress: user.dailyProgress || 0,
-      streak: user.currentStreak || 0,
+      // Financial Stats
+      availableCredits: creditsReady,
+      totalCredits: totalEarned,
+      coinBalance: user.coinBalance || 0,
+      balance: user.getBalanceInRupees(),
+      
+      // Daily Stats
+      dailyCreditsEarned: dailyEarned,
+      dailyCreditLimit: dailyLimit,
+      dailyProgress: calculatedProgress,
+      
+      // Activity Stats
+      streak: currentStreak,
+      daysActive: daysActive,
+      
+      // Task Stats
       totalTasks: user.totalTasksAssigned || 0,
       completedTasks: user.totalTasksCompleted || 0,
-      coinBalance: user.coinBalance || 0,
-      balance: user.getBalanceInRupees(), // Real rupees value
-      daysActive: user.daysActive || 0,
       
+      // Referral Stats
       referralStats: {
         totalReferrals: (user.totalDirectReferrals || 0) + (user.totalIndirectReferrals || 0) + (user.totalDeepReferrals || 0),
         totalEarnings: user.totalReferralEarnings || 0,
@@ -211,6 +231,7 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
         level3Referrals: user.totalDeepReferrals || 0
       },
 
+      // User Info
       user: {
         id: user._id,
         firstName: user.firstName,
