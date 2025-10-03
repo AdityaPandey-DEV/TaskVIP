@@ -648,4 +648,139 @@ router.get('/fraud-detection', authenticateAdmin, async (req, res) => {
   }
 });
 
+// @route   PUT /api/admin/withdrawals/:withdrawalId/status
+// @desc    Update withdrawal status
+// @access  Admin
+router.put('/withdrawals/:withdrawalId/status', authenticateAdmin, async (req, res) => {
+  try {
+    const { withdrawalId } = req.params;
+    const { status, adminNotes } = req.body;
+    const adminId = req.user._id;
+
+    // Validate status
+    const validStatuses = ['pending', 'processing', 'completed', 'failed', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+
+    // Find withdrawal
+    const RazorpayWithdrawal = require('../models/RazorpayWithdrawal');
+    const withdrawal = await RazorpayWithdrawal.findById(withdrawalId);
+    
+    if (!withdrawal) {
+      return res.status(404).json({ message: 'Withdrawal not found' });
+    }
+
+    // Update withdrawal status
+    withdrawal.status = status;
+    if (adminNotes) {
+      withdrawal.adminNotes = adminNotes;
+    }
+    
+    if (status === 'completed') {
+      withdrawal.processedAt = new Date();
+      withdrawal.processedBy = adminId;
+    } else if (status === 'failed') {
+      withdrawal.failureReason = adminNotes || 'Admin rejected';
+    }
+
+    await withdrawal.save();
+
+    // Log admin action
+    await logAdminAction(adminId, 'UPDATE_WITHDRAWAL_STATUS', {
+      withdrawalId,
+      oldStatus: withdrawal.status,
+      newStatus: status,
+      adminNotes
+    });
+
+    res.json({
+      message: 'Withdrawal status updated successfully',
+      withdrawal: {
+        id: withdrawal._id,
+        status: withdrawal.status,
+        processedAt: withdrawal.processedAt,
+        adminNotes: withdrawal.adminNotes
+      }
+    });
+
+  } catch (error) {
+    console.error('Update withdrawal status error:', error);
+    res.status(500).json({ message: 'Failed to update withdrawal status' });
+  }
+});
+
+// @route   GET /api/admin/withdrawals
+// @desc    Get all withdrawals with filters
+// @access  Admin
+router.get('/withdrawals', authenticateAdmin, async (req, res) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 20, 
+      status = '', 
+      method = '', 
+      startDate = '', 
+      endDate = '' 
+    } = req.query;
+
+    const RazorpayWithdrawal = require('../models/RazorpayWithdrawal');
+    
+    // Build query
+    const query = {};
+    
+    if (status) {
+      query.status = status;
+    }
+    
+    if (method) {
+      query.withdrawalMethod = method;
+    }
+    
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query.createdAt.$lte = new Date(endDate);
+      }
+    }
+
+    const withdrawals = await RazorpayWithdrawal.find(query)
+      .populate('userId', 'firstName lastName email')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .lean();
+
+    const total = await RazorpayWithdrawal.countDocuments(query);
+
+    res.json({
+      withdrawals: withdrawals.map(w => ({
+        id: w._id,
+        user: w.userId,
+        amount: w.amount,
+        netAmount: w.netAmount,
+        processingFee: w.processingFee,
+        withdrawalMethod: w.withdrawalMethod,
+        status: w.status,
+        payoutDetails: w.payoutDetails,
+        adminNotes: w.adminNotes,
+        createdAt: w.createdAt,
+        processedAt: w.processedAt
+      })),
+      pagination: {
+        current: parseInt(page),
+        pages: Math.ceil(total / limit),
+        total
+      }
+    });
+
+  } catch (error) {
+    console.error('Get withdrawals error:', error);
+    res.status(500).json({ message: 'Failed to get withdrawals' });
+  }
+});
+
 module.exports = router;

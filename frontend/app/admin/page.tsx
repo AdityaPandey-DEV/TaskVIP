@@ -18,9 +18,9 @@ import {
   Settings,
   PieChart,
   UserCheck,
+  BarChart3,
   Activity,
   CreditCard,
-  BarChart3,
   Calendar,
   Clock,
   Star,
@@ -60,6 +60,22 @@ interface AdminStats {
   systemHealth: 'healthy' | 'warning' | 'critical'
   lastBackup: string
   serverUptime: string
+  userGrowth?: Array<{
+    date: string
+    users: number
+  }>
+  vipDistribution?: Array<{
+    level: number
+    count: number
+    name: string
+  }>
+  recentActivity?: Array<{
+    id: string
+    type: string
+    user: string
+    amount?: number
+    timestamp: string
+  }>
 }
 
 interface User {
@@ -140,22 +156,42 @@ export default function AdminPage() {
   }, [user, loading])
 
   const fetchAllData = async () => {
-    await Promise.all([
-      fetchAdminStats(),
-      fetchUsers(),
-      fetchWithdrawals(),
-      fetchRecentActivity()
-    ])
+    try {
+      setLoadingStats(true)
+      setLoadingUsers(true)
+      setLoadingWithdrawals(true)
+      setLoadingActivity(true)
+      
+      await Promise.all([
+        fetchAdminStats(),
+        fetchUsers(),
+        fetchWithdrawals(),
+        fetchRecentActivity()
+      ])
+    } catch (error) {
+      console.error('Error fetching all data:', error)
+      toast.error('Failed to refresh data')
+    }
+  }
+
+  const handleRefresh = async () => {
+    toast.loading('Refreshing data...')
+    await fetchAllData()
+    toast.success('Data refreshed successfully')
   }
 
   const fetchAdminStats = async () => {
     try {
-      const response = await fetch('/api/admin/stats', {
+      setLoadingStats(true)
+      const response = await fetch('/api/admin-dashboard/dashboard', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       })
       if (response.ok) {
         const data = await response.json()
         setStats(data)
+      } else {
+        console.error('Failed to fetch admin stats:', response.status, response.statusText)
+        toast.error('Failed to load admin statistics')
       }
     } catch (error) {
       console.error('Error fetching admin stats:', error)
@@ -167,12 +203,16 @@ export default function AdminPage() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/admin/users', {
+      setLoadingUsers(true)
+      const response = await fetch('/api/admin-dashboard/users', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       })
       if (response.ok) {
         const data = await response.json()
         setUsers(data.users || [])
+      } else {
+        console.error('Failed to fetch users:', response.status, response.statusText)
+        toast.error('Failed to load users')
       }
     } catch (error) {
       console.error('Error fetching users:', error)
@@ -184,12 +224,16 @@ export default function AdminPage() {
 
   const fetchWithdrawals = async () => {
     try {
-      const response = await fetch('/api/admin/withdrawals', {
+      setLoadingWithdrawals(true)
+      const response = await fetch('/api/admin-dashboard/transactions', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       })
       if (response.ok) {
         const data = await response.json()
-        setWithdrawals(data.withdrawals || [])
+        setWithdrawals(data.transactions || [])
+      } else {
+        console.error('Failed to fetch withdrawals:', response.status, response.statusText)
+        toast.error('Failed to load withdrawals')
       }
     } catch (error) {
       console.error('Error fetching withdrawals:', error)
@@ -201,12 +245,17 @@ export default function AdminPage() {
 
   const fetchRecentActivity = async () => {
     try {
-      const response = await fetch('/api/admin/activity', {
+      setLoadingActivity(true)
+      // Use the dashboard endpoint which includes recent activity
+      const response = await fetch('/api/admin-dashboard/dashboard', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       })
       if (response.ok) {
         const data = await response.json()
-        setRecentActivity(data.activity || [])
+        setRecentActivity(data.recentActivity || [])
+      } else {
+        console.error('Failed to fetch recent activity:', response.status, response.statusText)
+        toast.error('Failed to load recent activity')
       }
     } catch (error) {
       console.error('Error fetching activity:', error)
@@ -343,7 +392,7 @@ export default function AdminPage() {
             </div>
             <div className="flex items-center space-x-4">
               <button
-                onClick={fetchAllData}
+                onClick={handleRefresh}
                 className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <RefreshCw className="w-4 h-4" />
@@ -453,6 +502,73 @@ export default function AdminPage() {
                   <span>+22% from last month</span>
                 </div>
               </div>
+            </div>
+
+            {/* User Growth Chart */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">User Growth Analytics</h3>
+                <div className="flex items-center space-x-2">
+                  <button className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg">Last 30 Days</button>
+                  <button className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Last 7 Days</button>
+                </div>
+              </div>
+              
+              {stats?.userGrowth && stats.userGrowth.length > 0 ? (
+                <div className="h-64 flex items-end space-x-2">
+                  {stats.userGrowth.map((data, index) => (
+                    <div key={index} className="flex-1 flex flex-col items-center">
+                      <div 
+                        className="w-full bg-blue-500 rounded-t transition-all duration-300 hover:bg-blue-600"
+                        style={{ 
+                          height: `${Math.max((data.users / Math.max(...stats.userGrowth.map(d => d.users))) * 200, 10)}px` 
+                        }}
+                        title={`${data.date}: ${data.users} users`}
+                      ></div>
+                      <div className="mt-2 text-xs text-gray-500 transform -rotate-45 origin-left">
+                        {new Date(data.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="h-64 flex items-center justify-center text-gray-500">
+                  <div className="text-center">
+                    <BarChart3 className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                    <p>No user growth data available</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* VIP Distribution Chart */}
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">VIP Distribution</h3>
+                <div className="text-sm text-gray-500">Total: {stats?.vipUsers || 0} VIP users</div>
+              </div>
+              
+              {stats?.vipDistribution && stats.vipDistribution.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {stats.vipDistribution.map((vip, index) => (
+                    <div key={index} className="text-center">
+                      <div className="w-16 h-16 mx-auto mb-2 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                        {vip.level}
+                      </div>
+                      <div className="text-sm font-medium text-gray-900">{vip.name}</div>
+                      <div className="text-lg font-bold text-gray-700">{vip.count}</div>
+                      <div className="text-xs text-gray-500">users</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="h-32 flex items-center justify-center text-gray-500">
+                  <div className="text-center">
+                    <Crown className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                    <p>No VIP distribution data available</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* System Health */}
