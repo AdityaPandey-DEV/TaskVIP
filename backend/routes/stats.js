@@ -162,6 +162,16 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
     // Migrate old balance fields to coinBalance
     user.migrateToCoinBalance();
     
+    // Check and reset daily stats if it's a new day
+    const today = new Date();
+    const lastReset = new Date(user.lastDailyReset);
+    if (today.toDateString() !== lastReset.toDateString()) {
+      user.dailyAdsWatched = 0;
+      user.dailyCreditsEarned = 0;
+      user.dailyProgress = 0;
+      user.lastDailyReset = today;
+    }
+    
     // If new stats fields are empty, populate them from old fields
     if (!user.totalEarned && user.totalCredits) {
       user.totalEarned = user.totalCredits;

@@ -1,9 +1,11 @@
 const express = require('express');
 const Razorpay = require('razorpay');
+const crypto = require('crypto');
 const RazorpayWithdrawal = require('../models/RazorpayWithdrawal');
 const User = require('../models/User');
 const Coin = require('../models/Coin');
 const { authenticateToken } = require('../middleware/auth');
+const errorLogger = require('../utils/errorLogger');
 const router = express.Router();
 
 // Initialize Razorpay
@@ -11,6 +13,15 @@ const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
+
+// Webhook signature verification
+const verifyWebhookSignature = (body, signature, secret) => {
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(body)
+    .digest('hex');
+  return expectedSignature === signature;
+};
 
 // Get withdrawal methods and their fees
 router.get('/methods', authenticateToken, async (req, res) => {
@@ -584,11 +595,16 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     const signature = req.get('X-Razorpay-Signature');
     const body = req.body;
     
-    // Verify webhook signature (implement this based on Razorpay docs)
-    // const isValid = verifyWebhookSignature(body, signature);
-    // if (!isValid) {
-    //   return res.status(400).json({ success: false, message: 'Invalid signature' });
-    // }
+    // Verify webhook signature
+    const isValid = verifyWebhookSignature(body, signature, process.env.RAZORPAY_WEBHOOK_SECRET);
+    if (!isValid) {
+      errorLogger.logSecurityEvent('INVALID_WEBHOOK_SIGNATURE', {
+        signature,
+        ip: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+      return res.status(400).json({ success: false, message: 'Invalid signature' });
+    }
     
     const event = JSON.parse(body);
     
@@ -637,7 +653,11 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     
     res.json({ success: true });
   } catch (error) {
-    console.error('Webhook error:', error);
+    errorLogger.logPaymentError(error, {
+      type: 'WEBHOOK_ERROR',
+      event: event?.event,
+      payoutId: event?.payload?.payout?.entity?.id
+    });
     res.status(500).json({ success: false, error: error.message });
   }
 });

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { apiRequest } from '@/lib/api'
 import { 
   PlayCircle, 
   Users, 
@@ -13,7 +14,8 @@ import {
   CheckCircle,
   ArrowRight,
   Crown,
-  Zap
+  Zap,
+  Loader2
 } from 'lucide-react'
 
 export default function HomePage() {
@@ -24,6 +26,8 @@ export default function HomePage() {
     totalCredits: 0,
     completedTasks: 0
   })
+  const [vipPlans, setVipPlans] = useState([])
+  const [loadingVipPlans, setLoadingVipPlans] = useState(true)
 
   useEffect(() => {
     // Fetch public stats
@@ -31,7 +35,41 @@ export default function HomePage() {
       .then(res => res.json())
       .then(data => setStats(data))
       .catch(console.error)
+
+    // Fetch VIP plans
+    fetchVipPlans()
   }, [])
+
+  const fetchVipPlans = async () => {
+    setLoadingVipPlans(true)
+    try {
+      const response = await apiRequest('api/vip/levels')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.levels) {
+          // Filter out free plan and format for homepage display
+          const paidPlans = data.levels
+            .filter(plan => plan.level > 0)
+            .map(plan => ({
+              level: plan.level,
+              name: plan.name,
+              price: `₹${plan.price}`,
+              duration: '30 days',
+              features: plan.features || [],
+              popular: plan.level === 2, // Make Silver popular
+              dailyCreditLimitMultiplier: plan.dailyCreditLimitMultiplier,
+              referralBonusMultiplier: plan.referralBonusMultiplier,
+              exclusiveOffers: plan.exclusiveOffers
+            }))
+          setVipPlans(paidPlans)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching VIP plans:', error)
+    } finally {
+      setLoadingVipPlans(false)
+    }
+  }
 
   const features = [
     {
@@ -66,57 +104,6 @@ export default function HomePage() {
     }
   ]
 
-  const vipPlans = [
-    {
-      level: 1,
-      name: 'VIP 1',
-      price: '₹300',
-      duration: '30 days',
-      features: [
-        '20 ads per day',
-        '₹1.5 per ad reward',
-        '₹30 daily earning cap',
-        '₹10 referral bonus',
-        'Priority support',
-        'Exclusive tasks'
-      ],
-      popular: false
-    },
-    {
-      level: 2,
-      name: 'VIP 2',
-      price: '₹600',
-      duration: '30 days',
-      features: [
-        '50 ads per day',
-        '₹2.0 per ad reward',
-        '₹100 daily earning cap',
-        '₹10 referral bonus',
-        'Priority support',
-        'Exclusive tasks',
-        'Higher reward rates'
-      ],
-      popular: true
-    },
-    {
-      level: 3,
-      name: 'VIP 3',
-      price: '₹1,000',
-      duration: '30 days',
-      features: [
-        '100 ads per day',
-        '₹2.5 per ad reward',
-        '₹250 daily earning cap',
-        '₹10 referral bonus',
-        'Priority support',
-        'Exclusive tasks',
-        'Highest reward rates',
-        'Milestone bonuses',
-        'VIP-only offers'
-      ],
-      popular: false
-    }
-  ]
 
   if (loading) {
     return (
@@ -259,7 +246,19 @@ export default function HomePage() {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {vipPlans.map((plan) => (
+            {loadingVipPlans ? (
+              <div className="col-span-full flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-primary-600 mr-3" />
+                <span className="text-gray-600">Loading VIP plans...</span>
+              </div>
+            ) : vipPlans.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <Crown className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">VIP Plans Not Available</h3>
+                <p className="text-gray-600">VIP plans are currently being set up. Please check back later.</p>
+              </div>
+            ) : (
+              vipPlans.map((plan) => (
               <div
                 key={plan.level}
                 className={`card relative ${plan.popular ? 'ring-2 ring-primary-500' : ''}`}
@@ -295,7 +294,8 @@ export default function HomePage() {
                   </button>
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </section>

@@ -49,57 +49,24 @@ export function VipBenefits() {
       })
       if (response.ok) {
         const data = await response.json()
-        setVipLevels(data.levels || getDefaultVipLevels())
+        if (data.success && data.levels) {
+          setVipLevels(data.levels)
+        } else {
+          console.error('Invalid VIP levels response:', data)
+          setVipLevels([])
+        }
       } else {
         console.error('Failed to fetch VIP levels:', response.status)
-        setVipLevels(getDefaultVipLevels())
+        setVipLevels([])
       }
     } catch (error) {
       console.error('Error fetching VIP levels:', error)
-      setVipLevels(getDefaultVipLevels())
+      setVipLevels([])
     } finally {
       setLoadingVipLevels(false)
     }
   }
 
-  const getDefaultVipLevels = (): VipLevel[] => [
-    {
-      level: 0,
-      name: 'Free',
-      price: 0,
-      dailyCreditLimitMultiplier: 1,
-      referralBonusMultiplier: 1,
-      exclusiveOffers: false,
-      description: 'Basic access to earning opportunities • 20% referral commission'
-    },
-    {
-      level: 1,
-      name: 'Bronze',
-      price: 99,
-      dailyCreditLimitMultiplier: 1.5,
-      referralBonusMultiplier: 1.2,
-      exclusiveOffers: true,
-      description: 'Enhanced earning limits • 30% referral commission • Exclusive offers'
-    },
-    {
-      level: 2,
-      name: 'Silver',
-      price: 199,
-      dailyCreditLimitMultiplier: 2,
-      referralBonusMultiplier: 1.5,
-      exclusiveOffers: true,
-      description: 'Higher earning potential • 40% referral commission • Premium rewards'
-    },
-    {
-      level: 3,
-      name: 'Gold',
-      price: 299,
-      dailyCreditLimitMultiplier: 3,
-      referralBonusMultiplier: 2,
-      exclusiveOffers: true,
-      description: 'Maximum earning potential • 50% referral commission • Exclusive benefits'
-    }
-  ]
 
   const handleRazorpayPayment = async (level: number, amount: number) => {
     try {
@@ -256,6 +223,26 @@ export function VipBenefits() {
       <div className="flex items-center justify-center p-8">
         <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
         <p className="ml-3 text-gray-600">Loading VIP levels...</p>
+      </div>
+    )
+  }
+
+  if (vipLevels.length === 0) {
+    return (
+      <div className="text-center p-8">
+        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Crown className="w-8 h-8 text-gray-400" />
+        </div>
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">VIP Levels Not Available</h3>
+        <p className="text-gray-600 mb-4">
+          We're currently setting up our VIP membership plans. Please check back later.
+        </p>
+        <button 
+          onClick={fetchVipLevels}
+          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Try Again
+        </button>
       </div>
     )
   }

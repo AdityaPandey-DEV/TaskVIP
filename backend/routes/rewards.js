@@ -254,14 +254,22 @@ router.post('/complete/:taskId', authenticateToken, async (req, res) => {
 
     await coinTransaction.save();
 
-    // Update user stats
-    await User.findByIdAndUpdate(userId, {
-      $inc: {
-        totalCredits: actualReward,
-        availableCredits: actualReward
-      },
-      lastActivity: new Date()
-    });
+    // Update user stats with activity tracking
+    const user = await User.findById(userId);
+    if (user) {
+      user.totalCredits += actualReward;
+      user.coinBalance += actualReward;
+      user.dailyCreditsEarned += actualReward;
+      
+      // Update activity stats (streak, days active)
+      user.updateActivityStats();
+      
+      // Update daily progress percentage
+      const dailyLimit = user.getDailyCreditLimit();
+      user.dailyProgress = Math.min((user.dailyCreditsEarned / dailyLimit) * 100, 100);
+      
+      await user.save();
+    }
 
     res.json({
       success: true,

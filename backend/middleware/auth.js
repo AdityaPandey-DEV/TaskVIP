@@ -51,7 +51,7 @@ const authenticateToken = async (req, res, next) => {
 const authenticateAdmin = async (req, res, next) => {
   try {
     await authenticateToken(req, res, () => {
-      if (req.user.email !== process.env.ADMIN_EMAIL) {
+      if (!req.user.isAdminUser()) {
         return res.status(403).json({ message: 'Admin access required' });
       }
       next();

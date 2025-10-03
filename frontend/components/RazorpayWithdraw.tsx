@@ -74,11 +74,16 @@ export default function RazorpayWithdraw() {
   const [history, setHistory] = useState<WithdrawalHistory[]>([])
   const [showHistory, setShowHistory] = useState(false)
   const [step, setStep] = useState(1) // 1: method selection, 2: details, 3: confirmation
+  const [conversionRate, setConversionRate] = useState({
+    coinsPerRupee: 10,
+    rupeesPerCoin: 0.1
+  })
 
   useEffect(() => {
     fetchWithdrawalMethods()
     fetchWithdrawalHistory()
     fetchUserBalance()
+    fetchConversionRate()
   }, [])
 
   const fetchWithdrawalMethods = async () => {
@@ -234,6 +239,27 @@ export default function RazorpayWithdraw() {
     }
   }
 
+  const fetchConversionRate = async () => {
+    try {
+      const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1]
+      const response = await apiRequest('api/coins/balance', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.conversionRate) {
+          setConversionRate(data.conversionRate)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching conversion rate:', error)
+    }
+  }
+
   const handleMethodSelect = (method: WithdrawalMethod) => {
     setSelectedMethod(method)
     setPayoutDetails({})
@@ -260,7 +286,7 @@ export default function RazorpayWithdraw() {
   }
 
   const getCreditsRequired = () => {
-    return (parseFloat(amount) || 0) * 10 // 10 coins = ₹1
+    return (parseFloat(amount) || 0) * conversionRate.coinsPerRupee
   }
 
   const validateUPI = (upiId: string) => {
@@ -443,7 +469,7 @@ export default function RazorpayWithdraw() {
             )}
           </div>
           <div className="bg-white/10 rounded-lg p-3">
-            <div className="text-2xl font-bold">₹10</div>
+            <div className="text-2xl font-bold">₹{Math.ceil(1000 / conversionRate.coinsPerRupee)}</div>
             <div className="text-sm text-green-100">Minimum Withdrawal</div>
           </div>
         </div>

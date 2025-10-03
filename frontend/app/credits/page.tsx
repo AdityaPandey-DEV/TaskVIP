@@ -46,11 +46,15 @@ export default function CreditsPage() {
   const [loadingStats, setLoadingStats] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [withdrawalLimits, setWithdrawalLimits] = useState({
+    minimum: { coins: 1000, rupees: 100 }
+  })
 
   useEffect(() => {
     if (user) {
       fetchCreditStats()
       fetchTransactions()
+      fetchWithdrawalLimits()
     }
   }, [user, currentPage])
 
@@ -88,6 +92,23 @@ export default function CreditsPage() {
       console.error('Error fetching transactions:', error)
     } finally {
       setLoadingTransactions(false)
+    }
+  }
+
+  const fetchWithdrawalLimits = async () => {
+    try {
+      const response = await fetch('/api/withdrawals/limits', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setWithdrawalLimits(data.limits || { minimum: { coins: 1000, rupees: 100 } })
+      }
+    } catch (error) {
+      console.error('Error fetching withdrawal limits:', error)
     }
   }
 
@@ -265,10 +286,10 @@ export default function CreditsPage() {
               <Target className="w-8 h-8 text-warning-600 mr-3" />
               <div>
                 <h3 className="text-lg font-semibold text-warning-900 mb-2">
-                  Minimum Withdrawal: ₹100
+                  Minimum Withdrawal: ₹{withdrawalLimits.minimum.rupees}
                 </h3>
                 <p className="text-warning-700">
-                  You need ₹{100 - (stats?.withdrawableCredits || 0)} more to withdraw.
+                  You need ₹{withdrawalLimits.minimum.rupees - (stats?.withdrawableCredits || 0)} more to withdraw.
                 </p>
               </div>
             </div>

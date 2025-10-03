@@ -51,12 +51,17 @@ export default function ReferralsPage() {
   const [loadingStats, setLoadingStats] = useState(true)
   const [loadingReferrals, setLoadingReferrals] = useState(true)
   const [copied, setCopied] = useState(false)
+  const [commissionStructure, setCommissionStructure] = useState({
+    signupBonus: { amount: 10, currency: 'INR' },
+    dailyCommission: { percentage: 10 }
+  })
 
   useEffect(() => {
     if (!loading) {
       if (user) {
         fetchReferralStats()
         fetchReferrals()
+        fetchCommissionStructure()
       } else {
         // Redirect to login if not authenticated
         router.push('/login')
@@ -98,6 +103,18 @@ export default function ReferralsPage() {
       console.error('Error fetching referrals:', error)
     } finally {
       setLoadingReferrals(false)
+    }
+  }
+
+  const fetchCommissionStructure = async () => {
+    try {
+      const response = await apiRequest('api/referral-bonus/commission-structure')
+      if (response.ok) {
+        const data = await response.json()
+        setCommissionStructure(data)
+      }
+    } catch (error) {
+      console.error('Error fetching commission structure:', error)
     }
   }
 
@@ -332,7 +349,7 @@ export default function ReferralsPage() {
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">They Sign Up</h3>
               <p className="text-sm text-gray-600">
-                When they sign up using your link, you get ₹10 bonus
+                When they sign up using your link, you get ₹{commissionStructure.signupBonus.amount} bonus
               </p>
             </div>
             <div className="text-center">

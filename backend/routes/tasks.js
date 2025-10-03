@@ -229,6 +229,13 @@ router.post('/complete', authenticateToken, [
     user.totalCredits += creditAmount;
     user.coinBalance += creditAmount;
     
+    // Update activity stats (streak, days active)
+    user.updateActivityStats();
+    
+    // Update daily progress percentage
+    const dailyLimit = user.getDailyCreditLimit();
+    user.dailyProgress = Math.min((user.dailyCreditsEarned / dailyLimit) * 100, 100);
+    
     // Update withdrawable credits (only if user has earned enough)
     if (user.totalCredits >= 100) {
       user.withdrawableCredits = user.coinBalance;

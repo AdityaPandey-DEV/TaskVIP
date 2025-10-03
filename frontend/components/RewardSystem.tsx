@@ -75,54 +75,13 @@ export function RewardSystem() {
         setTasks(data.tasks || [])
       } else {
         console.error('Failed to fetch reward tasks:', response.status)
-        // Set default tasks if API fails
-        setTasks([
-          {
-            id: 'admob_video_1',
-            type: 'admob_video',
-            title: 'Watch Rewarded Video',
-            description: 'Watch a short video ad to earn coins',
-            coinReward: 10,
-            vipMultiplier: 1.5,
-            dailyLimit: 20,
-            completedToday: 0,
-            isAvailable: true,
-            estimatedTime: '30 seconds',
-            difficulty: 'easy'
-          },
-          {
-            id: 'daily_bonus_1',
-            type: 'daily_bonus',
-            title: 'Daily Check-in Bonus',
-            description: 'Claim your daily login bonus',
-            coinReward: 50,
-            vipMultiplier: 2,
-            dailyLimit: 1,
-            completedToday: 0,
-            isAvailable: true,
-            estimatedTime: '1 second',
-            difficulty: 'easy'
-          }
-        ])
+        // Set empty tasks if API fails - let user know tasks are unavailable
+        setTasks([])
       }
     } catch (error) {
       console.error('Error fetching reward tasks:', error)
-      // Set default tasks on error
-      setTasks([
-        {
-          id: 'admob_video_1',
-          type: 'admob_video',
-          title: 'Watch Rewarded Video',
-          description: 'Watch a short video ad to earn coins',
-          coinReward: 10,
-          vipMultiplier: 1.5,
-          dailyLimit: 20,
-          completedToday: 0,
-          isAvailable: true,
-          estimatedTime: '30 seconds',
-          difficulty: 'easy'
-        }
-      ])
+      // Set empty tasks on error - let user know tasks are unavailable
+      setTasks([])
     } finally {
       setLoading(false)
     }

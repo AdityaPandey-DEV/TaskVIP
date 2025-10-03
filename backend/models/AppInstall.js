@@ -178,10 +178,22 @@ appInstallSchema.methods.markCompleted = async function() {
   const User = mongoose.model('User');
   const Coin = mongoose.model('Coin');
   
-  // Update user coin balance
-  await User.findByIdAndUpdate(this.userId, {
-    $inc: { coinBalance: this.rewardCoins }
-  });
+  // Update user coin balance and activity stats
+  const user = await User.findById(this.userId);
+  if (user) {
+    user.coinBalance += this.rewardCoins;
+    user.dailyCreditsEarned += this.rewardCoins;
+    user.totalCredits += this.rewardCoins;
+    
+    // Update activity stats (streak, days active)
+    user.updateActivityStats();
+    
+    // Update daily progress percentage
+    const dailyLimit = user.getDailyCreditLimit();
+    user.dailyProgress = Math.min((user.dailyCreditsEarned / dailyLimit) * 100, 100);
+    
+    await user.save();
+  }
   
   // Create coin transaction record
   const coinTransaction = new Coin({

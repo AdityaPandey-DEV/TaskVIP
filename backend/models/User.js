@@ -40,6 +40,15 @@ const userSchema = new mongoose.Schema({
     enum: ['trial', 'free', 'vip'],
     default: 'trial'
   },
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
+  },
+  isAdmin: {
+    type: Boolean,
+    default: false
+  },
   trialExpiry: {
     type: Date,
     default: function() {
@@ -436,6 +445,7 @@ userSchema.methods.hasReachedDailyAdsLimit = function() {
   if (today.toDateString() !== lastReset.toDateString()) {
     this.dailyAdsWatched = 0;
     this.dailyCreditsEarned = 0;
+    this.dailyProgress = 0;
     this.lastDailyReset = today;
     this.save();
   }
@@ -452,6 +462,7 @@ userSchema.methods.hasReachedDailyEarningLimit = function() {
   if (today.toDateString() !== lastReset.toDateString()) {
     this.dailyCreditsEarned = 0;
     this.dailyAdsWatched = 0;
+    this.dailyProgress = 0;
     this.lastDailyReset = today;
     this.save();
   }
@@ -600,6 +611,11 @@ userSchema.methods.setReferralChain = async function(referralCode) {
   }
   
   return true;
+};
+
+// Check if user is admin
+userSchema.methods.isAdminUser = function() {
+  return this.role === 'admin' || this.isAdmin === true;
 };
 
 // Get comprehensive dashboard stats (directly from user model)
