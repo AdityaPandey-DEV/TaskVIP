@@ -92,6 +92,7 @@ app.use('/api/multi-level-referrals', require('./routes/multi-level-referrals'))
 app.use('/api/razorpay-withdrawals', require('./routes/razorpay-withdrawals')); // Razorpay withdrawal system
 app.use('/api/app-installs', require('./routes/app-installs')); // App install system
 app.use('/api/vip-pricing', require('./routes/vip-pricing')); // VIP pricing management
+app.use('/api/admin-dashboard', require('./routes/admin-dashboard')); // Admin dashboard
 app.use('/api/stats', require('./routes/stats'));
 
 // Health check endpoint

@@ -16,10 +16,17 @@ import {
   RefreshCw,
   Download,
   Eye,
-  Settings
+  Settings,
+  PieChart,
+  UserCheck,
+  Activity,
+  CreditCard
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import AdminDashboard from '@/components/AdminDashboard'
+import ReferralTree from '@/components/ReferralTree'
+import VipPricingManagement from '@/components/VipPricingManagement'
 
 interface AdminStats {
   totalUsers: number
@@ -52,6 +59,7 @@ export default function AdminPage() {
   const [loadingStats, setLoadingStats] = useState(true)
   const [loadingActivity, setLoadingActivity] = useState(true)
   const [unauthorized, setUnauthorized] = useState(false)
+  const [activeTab, setActiveTab] = useState('dashboard')
 
   useEffect(() => {
     if (!loading) {
@@ -192,188 +200,181 @@ export default function AdminPage() {
         </div>
       </header>
 
+      {/* Navigation Tabs */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="flex space-x-8">
+            {[
+              { id: 'dashboard', name: 'Dashboard', icon: BarChart3 },
+              { id: 'users', name: 'Users', icon: Users },
+              { id: 'referrals', name: 'Referral Tree', icon: UserCheck },
+              { id: 'vip-pricing', name: 'VIP Pricing', icon: Crown },
+              { id: 'analytics', name: 'Analytics', icon: PieChart },
+              { id: 'transactions', name: 'Transactions', icon: CreditCard }
+            ].map((tab) => {
+              const Icon = tab.icon
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center px-4 py-4 border-b-2 font-medium text-sm transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 mr-2" />
+                  {tab.name}
+                </button>
+              )
+            })}
+          </nav>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Admin Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="stat-card">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Users className="w-8 h-8 text-primary-600" />
-              </div>
-              <div className="ml-4">
-                <div className="stat-value">{stats?.totalUsers || 0}</div>
-                <div className="stat-label">Total Users</div>
-              </div>
-            </div>
-          </div>
+        {/* Tab Content */}
+        {activeTab === 'dashboard' && (
+          <AdminDashboard />
+        )}
 
-          <div className="stat-card">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Crown className="w-8 h-8 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <div className="stat-value">{stats?.vipUsers || 0}</div>
-                <div className="stat-label">VIP Users</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <DollarSign className="w-8 h-8 text-success-600" />
-              </div>
-              <div className="ml-4">
-                <div className="stat-value">{formatCurrency(stats?.totalRevenue || 0)}</div>
-                <div className="stat-label">Total Revenue</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <TrendingUp className="w-8 h-8 text-warning-600" />
-              </div>
-              <div className="ml-4">
-                <div className="stat-value">{formatCurrency(stats?.netProfit || 0)}</div>
-                <div className="stat-label">Net Profit</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Today's Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Today's Earnings</h3>
-            <div className="text-3xl font-bold text-success-600 mb-2">
-              {formatCurrency(stats?.todayEarnings || 0)}
-            </div>
-            <div className="text-sm text-gray-600">
-              Revenue generated today
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Today's Payouts</h3>
-            <div className="text-3xl font-bold text-warning-600 mb-2">
-              {formatCurrency(stats?.todayPayouts || 0)}
-            </div>
-            <div className="text-sm text-gray-600">
-              Amount paid out today
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button className="btn btn-primary">
-              <Users className="w-4 h-4 mr-2" />
-              Manage Users
-            </button>
-            <button className="btn btn-secondary">
-              <DollarSign className="w-4 h-4 mr-2" />
-              View Transactions
-            </button>
-            <button className="btn btn-secondary">
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Analytics
-            </button>
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="bg-white rounded-lg shadow-sm">
-          <div className="p-6 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
-          </div>
-
-          {loadingActivity ? (
-            <div className="flex justify-center py-8">
-              <div className="loading-spinner"></div>
-            </div>
-          ) : recentActivity.length === 0 ? (
-            <div className="text-center py-12">
-              <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No recent activity</h3>
-              <p className="text-gray-600">
-                Activity will appear here as users interact with the platform.
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-200">
-              {recentActivity.map((activity, index) => (
-                <div key={index} className="p-6 hover:bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 mr-4">
-                        {activity.type === 'credit_earned' ? (
-                          <Target className="w-8 h-8 text-primary-600" />
-                        ) : (
-                          <Crown className="w-8 h-8 text-purple-600" />
-                        )}
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900">
-                          {activity.description}
-                        </h4>
-                        <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
-                          <span>
-                            {activity.user.firstName} {activity.user.lastName}
-                          </span>
-                          <span>•</span>
-                          <span className="capitalize">{activity.user.userType}</span>
-                          <span>•</span>
-                          <span>{formatDate(activity.createdAt)}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-semibold text-success-600">
-                        +{formatCurrency(activity.amount)}
-                      </div>
-                      <div className="text-sm text-gray-500 capitalize">
-                        {activity.type.replace('_', ' ')}
-                      </div>
+        {activeTab === 'users' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">User Management</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <Users className="w-8 h-8 text-blue-600 mr-3" />
+                    <div>
+                      <div className="text-2xl font-bold text-blue-900">{stats?.totalUsers || 0}</div>
+                      <div className="text-sm text-blue-700">Total Users</div>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* System Health */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mt-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">System Health</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="bg-success-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-success-600" />
+                <div className="bg-purple-50 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <Crown className="w-8 h-8 text-purple-600 mr-3" />
+                    <div>
+                      <div className="text-2xl font-bold text-purple-900">{stats?.vipUsers || 0}</div>
+                      <div className="text-sm text-purple-700">VIP Users</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-green-50 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <Activity className="w-8 h-8 text-green-600 mr-3" />
+                    <div>
+                      <div className="text-2xl font-bold text-green-900">{stats?.activeUsers || 0}</div>
+                      <div className="text-sm text-green-700">Active Users</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-orange-50 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <DollarSign className="w-8 h-8 text-orange-600 mr-3" />
+                    <div>
+                      <div className="text-2xl font-bold text-orange-900">{formatCurrency(stats?.totalRevenue || 0)}</div>
+                      <div className="text-sm text-orange-700">Total Revenue</div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <h4 className="font-semibold text-gray-900 mb-2">Database</h4>
-              <p className="text-sm text-gray-600">Connected</p>
-            </div>
-            <div className="text-center">
-              <div className="bg-success-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-success-600" />
+              <div className="text-center py-8">
+                <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">User Management Interface</h4>
+                <p className="text-gray-600">Advanced user management features will be implemented here.</p>
               </div>
-              <h4 className="font-semibold text-gray-900 mb-2">Email Service</h4>
-              <p className="text-sm text-gray-600">Operational</p>
-            </div>
-            <div className="text-center">
-              <div className="bg-success-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-success-600" />
-              </div>
-              <h4 className="font-semibold text-gray-900 mb-2">Payment Gateway</h4>
-              <p className="text-sm text-gray-600">Active</p>
             </div>
           </div>
-        </div>
+        )}
+
+        {activeTab === 'referrals' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Referral Tree Visualization</h3>
+              <ReferralTree />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'vip-pricing' && (
+          <div className="space-y-6">
+            <VipPricingManagement />
+          </div>
+        )}
+
+        {activeTab === 'analytics' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Analytics Dashboard</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-gray-50 rounded-lg p-6 text-center">
+                  <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">User Growth Analytics</h4>
+                  <p className="text-gray-600">Charts and graphs showing user growth trends</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-6 text-center">
+                  <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Revenue Analytics</h4>
+                  <p className="text-gray-600">Revenue trends and financial insights</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-6 text-center">
+                  <PieChart className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">VIP Distribution</h4>
+                  <p className="text-gray-600">VIP level distribution and conversion rates</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-6 text-center">
+                  <UserCheck className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Referral Analytics</h4>
+                  <p className="text-gray-600">Referral performance and network analysis</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'transactions' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Transaction Management</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                <div className="bg-green-50 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <DollarSign className="w-8 h-8 text-green-600 mr-3" />
+                    <div>
+                      <div className="text-2xl font-bold text-green-900">{formatCurrency(stats?.totalRevenue || 0)}</div>
+                      <div className="text-sm text-green-700">Total Revenue</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-red-50 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <CreditCard className="w-8 h-8 text-red-600 mr-3" />
+                    <div>
+                      <div className="text-2xl font-bold text-red-900">{formatCurrency(stats?.totalPayouts || 0)}</div>
+                      <div className="text-sm text-red-700">Total Payouts</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <TrendingUp className="w-8 h-8 text-blue-600 mr-3" />
+                    <div>
+                      <div className="text-2xl font-bold text-blue-900">{formatCurrency(stats?.netProfit || 0)}</div>
+                      <div className="text-sm text-blue-700">Net Profit</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="text-center py-8">
+                <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">Transaction Management Interface</h4>
+                <p className="text-gray-600">Advanced transaction management features will be implemented here.</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
