@@ -64,6 +64,11 @@ export default function AdminPage() {
   useEffect(() => {
     if (!loading) {
       if (user) {
+        // Check if user is admin
+        if (user.role !== 'admin' && !user.isAdmin) {
+          setUnauthorized(true)
+          return
+        }
         fetchAdminStats()
         fetchRecentActivity()
       } else {

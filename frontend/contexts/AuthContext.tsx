@@ -22,6 +22,8 @@ interface User {
   streak: number
   badges: string[]
   createdAt: string
+  role: 'user' | 'admin'
+  isAdmin: boolean
 }
 
 interface AuthContextType {

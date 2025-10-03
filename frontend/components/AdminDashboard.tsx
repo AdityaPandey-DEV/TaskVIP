@@ -50,8 +50,12 @@ export default function AdminDashboard() {
   }
 
   useEffect(() => {
+    // Check if user is admin
+    if (user && (user.role !== 'admin' && !user.isAdmin)) {
+      return
+    }
     fetchAdminStats()
-  }, [])
+  }, [user])
 
   const fetchAdminStats = async () => {
     try {
